@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}កក់រថយន្ត{% endblock %}
+{% block content %}
+<h2>កក់ {{ car[1] }}</h2>
+<form method="POST">
+    <input type="date" name="start_date" required>
+    <input type="date" name="end_date" required>
+    <button type="submit">បញ្ជាក់ការកក់</button>
+</form>
+{% endblock %}

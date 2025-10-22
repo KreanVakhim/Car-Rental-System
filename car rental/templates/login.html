@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}ចូលប្រព័ន្ធ{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2>ចូលប្រព័ន្ធ</h2>
+        <form method="POST">
+            <input type="text" name="username" placeholder="ឈ្មោះអ្នកប្រើ" required>
+            <input type="password" name="password" placeholder="ពាក្យសម្ងាត់" required>
+            <button type="submit">ចូល</button>
+        </form>
+        <a href="{{ url_for('index') }}">ចុះឈ្មោះ?</a>
+    </div>
+</div>
+{% endblock %}

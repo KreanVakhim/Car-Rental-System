@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}ទំព័រដើម{% endblock %}
+{% block content %}
+<div class="jumbotron">
+    <h2>សូមស្វាគមន៍មកកាន់ Car Rental System!</h2>
+    <p>ជួលរថយន្តងាយស្រួល និងសុវត្ថិភាព។</p>
+    <a href="{{ url_for('cars') }}" class="btn btn-primary">មើលរថយន្ត</a>
+</div>
+<h3>ចុះឈ្មោះថ្មី</h3>
+<form method="POST" action="{{ url_for('register') }}">
+    <input type="text" name="username" placeholder="ឈ្មោះអ្នកប្រើ" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="ពាក្យសម្ងាត់" required>
+    <button type="submit">ចុះឈ្មោះ</button>
+</form>
+{% endblock %}

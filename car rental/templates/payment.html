@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}បង់ប្រាក់{% endblock %}
+{% block content %}
+<h2>បង់ប្រាក់សម្រាប់ការកក់ #{{ booking_id }}</h2>
+<form method="POST">
+    <input type="number" name="amount" placeholder="ចំនួនប្រាក់" step="0.01" required>
+    <select name="method">
+        <option value="cash">Cash</option>
+        <option value="card">Credit Card</option>
+        <option value="online">Online</option>
+    </select>
+    <button type="submit">បង់ប្រាក់</button>
+</form>
+{% endblock %}
