@@ -1,9 +1,13 @@
-{% extends "base.html" %}
-{% block title %}សូមស្វាគមន៍{% endblock %}
-{% block content %}
-<div class="jumbotron text-center">
-    <h2>សូមស្វាគមន៍, {{ session.username }}!</h2>
-    <p>អ្នកអាច <a href="{{ url_for('cars') }}" class="btn btn-primary">មើលរថយន្ត</a> ឬ <a href="{{ url_for('dashboard') if session.role == 'admin' else '#' }}" class="btn btn-secondary">Dashboard</a>។</p>
-    <p>ប្រព័ន្ធនេះជួយអ្នកជួលរថយន្តងាយស្រួល និងសុវត្ថិភាព។</p>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ស្វាគមន៍</title>
+    <style>
+        body { font-family: Arial; }
+    </style>
+</head>
+<body>
+    <h1>ស្វាគមន៍ {{ user.name }}!</h1>
+    <p>អ្នកបានចុះឈ្មោះជោគជ័យ។ ចូលប្រើនៅ <a href="http://localhost:5000/login">ទីនេះ</a>។</p>
+</body>
+</html>

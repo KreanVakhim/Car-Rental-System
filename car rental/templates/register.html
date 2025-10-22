@@ -1,14 +1,19 @@
-<!-- templates/register.html -->
 {% extends "base.html" %}
-
-{% block title %}Register{% endblock %}
-
+{% block title %}ចុះឈ្មោះ{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">{% endblock %}
 {% block content %}
-<h1>Register</h1>
-<form method="POST">
-    <label>Username: <input type="text" name="username" required></label>
-    <label>Password: <input type="password" name="password" required></label>
-    <label>Email: <input type="email" name="email" required></label>
-    <button type="submit">Register</button>
-</form>
+<div class="register-form">
+    <h2>ចុះឈ្មោះគណនីថ្មី</h2>
+    <form method="POST" action="{{ url_for('register') }}">
+        <input type="text" name="name" placeholder="ឈ្មោះ" required>
+        <input type="email" name="email" placeholder="អ៊ីម៉ែល" required>
+        <input type="password" name="password" placeholder="ពាក្យសម្ងាត់" required>
+        <select name="user_type">
+            <option value="customer">អតិថិជន</option>
+            <option value="staff">បុគ្គលិក</option>
+        </select>
+        <button type="submit">ចុះឈ្មោះ</button>
+    </form>
+    <p><a href="{{ url_for('login') }}">មានគណនីរួចទេ? ចូល</a></p>
+</div>
 {% endblock %}

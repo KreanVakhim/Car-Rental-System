@@ -1,18 +1,19 @@
 {% extends "base.html" %}
-{% block title %}បញ្ជីរថយន្ត{% endblock %}
+{% block title %}រថយន្ត{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/cars.css') }}">{% endblock %}
 {% block content %}
-<h2>រថយន្តដែលមានសម្រាប់ជួល</h2>
-<div class="row">
-    {% for car in cars %}
-    <div class="col-md-4">
-        <div class="car-item card">
-            <img src="{{ url_for('static', filename='images/' + car[4]) if car[4] else '#' }}" alt="{{ car[1] }}" onerror="this.src='https://via.placeholder.com/100x60?text=Car'">
-            <h5>{{ car[1] }}</h5>
-            <p>តម្លៃ: ${{ car[2] }}/ថ្ងៃ</p>
-            <p>ស្ថានភាព: {{ car[3] }}</p>
-            <a href="{{ url_for('booking', car_id=car[0]) }}" class="btn btn-success">កក់</a>
+<div class="cars-list">
+    <h2>រថយន្តដែលមានសម្រាប់ជួល</h2>
+    <div class="car-grid">
+        {% for car in cars %}
+        <div class="car-card">
+            <img src="{{ car.image }}" alt="{{ car.model }}">
+            <h3>{{ car.brand }} {{ car.model }}</h3>
+            <p>តម្លៃ: ${{ car.price }}/ថ្ងៃ</p>
+            <p>ស្ថានហាការ: {{ 'Available' if car.available else 'Rented' }}</p>
+            <a href="{{ url_for('booking', car_id=car.id) }}" class="btn-primary">កក់</a>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 {% endblock %}

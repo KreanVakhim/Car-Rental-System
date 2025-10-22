@@ -1,7 +1,18 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h2>ការកក់រថយន្តជោគជ័យ!</h2>
-    <p>សូមអរគុណសម្រាប់ការកក់របស់អ្នក។ រថយន្តនឹងរង់ចាំនៅថ្ងៃ {{ start_date }}។</p>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}កក់រថយន្ត{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">{% endblock %}
+{% block content %}
+<div class="booking-form">
+    <h2>កក់ {{ car.brand }} {{ car.model }}</h2>
+    <form method="POST" action="{{ url_for('booking', car_id=car.id) }}">  <!-- កែនៅទីនេះ: បន្ថែម car_id=car.id -->
+        <input type="date" name="start_date" required>
+        <input type="date" name="end_date" required>
+        <input type="hidden" name="car_id" value="{{ car.id }}">
+        <button type="submit">បញ្ជាក់ការកក់</button>
+    </form>
+    <a href="{{ url_for('payment', booking_id=booking.id) }}">បន្តទៅបង់ប្រាក់</a>  <!-- សម្គាល់: booking.id នឹងមានតែក្រោយ POST សម្រេច - បើចង់បង្ហាញតែក្រោយកក់ អាចកែជា conditional -->
+</div>
+{% endblock %}
+{% if booking %}
+<!-- <a href="{{ url_for('payment', booking_id=booking.id) }}">បន្តទៅបង់ប្រាក់</a>
+{% endif %} -->

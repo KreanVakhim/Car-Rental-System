@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}វិក្កយបត្រ{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/payment_receipt.css') }}">{% endblock %}
+{% block content %}
+<div class="receipt">
+    <h2>វិក្កយបត្រ និងការបង់ប្រាក់ជោគជ័យ</h2>
+    <p><strong>លេខកក់:</strong> {{ receipt.booking_id }}</p>
+    <p><strong>រថយន្ត:</strong> {{ receipt.brand }} {{ receipt.model }}</p>
+    <p><strong>ចំនួនទឹកប្រាក់:</strong> ${{ receipt.total_amount }}</p>
+    <p><strong>វិធីបង់:</strong> {{ receipt.method }}</p>
+    <p><strong>លេខប្រតិបត្តិការ:</strong> {{ receipt.transaction_id }}</p>
+    <p><strong>កាលបរិច្ឆេទបង់:</strong> {{ receipt.paid_at }}</p>
+    <p><strong>ថ្ងៃចាប់ផ្តើមជួល:</strong> {{ receipt.start_date }}</p>
+    <a href="{{ url_for('after_booking') }}" class="btn-primary">បន្តទៅការបញ្ជាក់</a>
+    <a href="{{ url_for('dashboard') }}">មើល Dashboard</a>
+</div>
+{% endblock %}

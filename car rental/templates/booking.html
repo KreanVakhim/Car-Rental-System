@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block title %}កក់រថយន្ត{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">{% endblock %}
 {% block content %}
-<h2>កក់ {{ car[1] }}</h2>
-<form method="POST">
-    <input type="date" name="start_date" required>
-    <input type="date" name="end_date" required>
-    <button type="submit">បញ្ជាក់ការកក់</button>
-</form>
+<div class="booking-form">
+    <h2>កក់ {{ car.brand }} {{ car.model }}</h2>
+    <form method="POST" action="{{ url_for('booking', car_id=car.id) }}">
+        <input type="date" name="start_date" required>
+        <input type="date" name="end_date" required>
+        <input type="hidden" name="car_id" value="{{ car.id }}">
+        <button type="submit">បញ្ជាក់ការកក់</button>
+    </form>
+    <p>បន្ទាប់ពីបញ្ជាក់ការកក់ អ្នកនឹងត្រូវបានបញ្ជូនទៅទំព័របង់ប្រាក់ស្វ័យប្រវត្តិ។</p>
+</div>
 {% endblock %}

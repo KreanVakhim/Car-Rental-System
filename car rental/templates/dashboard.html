@@ -1,28 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
 {% block content %}
-<h2>Dashboard សម្រាប់ Admin</h2>
 <div class="dashboard">
-    <div class="card">
-        <h3>រថយន្តសរុប</h3>
-        <p>{{ total_cars }}</p>
-    </div>
-    <div class="card">
-        <h3>ការកក់ថ្មី</h3>
-        <p>{{ total_bookings }}</p>
-    </div>
+    <h2>Dashboard</h2>
+    <table>
+        <thead>
+            <tr><th>កក់ ID</th><th>អតិថិជន</th><th>រថយន្ត</th><th>ស្ថានភាព</th></tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.id }}</td>
+                <td>{{ booking.customer_name }}</td>
+                <td>{{ booking.car_model }}</td>
+                <td>{{ booking.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<canvas id="myChart" width="400" height="200"></canvas>
-<script>
-    const ctx = document.getElementById('myChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['រថយន្ត', 'ការកក់'],
-            datasets: [{ label: 'ចំនួន', data: [{{ total_cars }}, {{ total_bookings }}], backgroundColor: ['#007bff', '#28a745'] }]
-        },
-        options: { scales: { y: { beginAtZero: true } } }
-    });
-</script>
 {% endblock %}

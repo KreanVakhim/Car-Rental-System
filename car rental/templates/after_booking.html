@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}ក្រោយកក់{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/after_booking.css') }}">{% endblock %}
+{% block content %}
+<div class="after-booking">
+    <h2>ការកក់បានបញ្ជាក់!</h2>
+    <p>អ្នកនឹងទទួលរថយន្តនៅថ្ងៃ {{ start_date }}។</p>
+    <a href="{{ url_for('dashboard') }}">មើល Dashboard</a>
+</div>
+{% endblock %}
