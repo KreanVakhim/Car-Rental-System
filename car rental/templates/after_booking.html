@@ -1,10 +1,81 @@
-{% extends "base.html" %}
-{% block title %}ក្រោយកក់{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/after_booking.css') }}">{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Booking Confirmed{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/after_booking.css') }}">
+{% endblock %}
+{% block js %}
+<script src="{{ url_for('static', filename='js/after_booking.js') }}"></script>
+{% endblock %}
 {% block content %}
-<div class="after-booking">
-    <h2>ការកក់បានបញ្ជាក់!</h2>
-    <p>អ្នកនឹងទទួលរថយន្តនៅថ្ងៃ {{ start_date }}។</p>
-    <a href="{{ url_for('dashboard') }}">មើល Dashboard</a>
+<div class="confirmation-container">
+    <h1>Booking #{{ booking_id }} Confirmed!</h1>
+    <div class="confirmation-details">
+        <p><strong>Thank You for Your Booking!</strong></p>
+        <p>Your reservation has been successfully confirmed. Please proceed to the pickup location on the start date.</p>
+        
+        <!-- Booking Details -->
+        {% if booking %}
+        <div class="booking-details">
+            <h2>Booking Details</h2>
+            <p><strong>Car Model:</strong> {{ booking.car_model }}</p>
+            <p><strong>Start Date:</strong> {{ booking.start_date }}</p>
+            <p><strong>End Date:</strong> {{ booking.end_date }}</p>
+            <p><strong>Total Cost:</strong> ${{ booking.total_cost | default('Pending calculation') }}</p>
+            <p><strong>Pickup Location:</strong> Main Branch, Phnom Penh</p>
+        </div>
+        {% else %}
+        <p>Loading booking details...</p>
+        {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="{{ url_for('payment_receipt', booking_id=booking_id) }}" class="btn btn-primary">View Receipt</a>
+            <a href="{{ url_for('booking_history') }}" class="btn btn-secondary">View Booking History</a>
+            <button onclick="downloadConfirmation()" class="btn btn-info">Download Confirmation (PDF)</button>
+        </div>
+    </div>
 </div>
+
+<!-- Responsive Styling -->
+<style>
+.confirmation-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+.booking-details {
+    text-align: left;
+    margin: 20px 0;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+}
+.btn-primary { background-color: #007bff; color: white; }
+.btn-secondary { background-color: #6c757d; color: white; }
+.btn-info { background-color: #17a2b8; color: white; }
+@media (max-width: 600px) {
+    .confirmation-container { padding: 10px; }
+    .btn { display: block; width: 100%; margin: 10px 0; }
+}
+</style>
+
+<script>
+function downloadConfirmation() {
+    alert("PDF download feature is under development. Please check back later!");
+    // Future implementation: Trigger API call to generate and download PDF
+}
+</script>
 {% endblock %}

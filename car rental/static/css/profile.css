@@ -1,4 +1,8 @@
-.payment-container {
+:root {
+    --primary-color: #007bff;
+    --bg-color: #f8f9fa;
+}
+.profile-container {
     max-width: 600px;
     margin: 20px auto;
     padding: 20px;
@@ -7,46 +11,36 @@
     background-color: var(--bg-color);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.booking-summary {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: white;
-    border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.booking-summary p {
+.profile-details p {
     margin: 10px 0;
 }
-.form-group {
-    margin: 15px 0;
+form {
+    margin-top: 20px;
 }
-.form-group label {
+label {
     display: block;
-    font-weight: bold;
+    margin-bottom: 10px;
 }
-.form-group input, .form-group select {
+select {
     width: 100%;
     padding: 8px;
+    margin-bottom: 10px;
     border: 1px solid #ddd;
-    border-radius: 5px;
+    border-radius: 4px;
 }
-.btn-primary {
+button {
     background-color: var(--primary-color);
     color: white;
     padding: 10px 20px;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
 }
-.btn-primary:hover {
+button:hover {
     background-color: #0056b3;
 }
-.back-to-dashboard {
-    margin-top: 15px;
-    text-align: center;
-}
 @media (max-width: 600px) {
-    .payment-container {
+    .profile-container {
         padding: 10px;
     }
 }

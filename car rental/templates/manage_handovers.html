@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}{% if session.language == 'km' %}គ្រប់គ្រងការទទួល/ប្រគល់{% else %}Manage Handovers{% endif %}{% endblock %}
+{% block content %}
+<div class="manage-handovers-container">
+    <h1>{% if session.language == 'km' %}គ្រប់គ្រងការទទួល/ប្រគល់{% else %}Manage Handovers{% endif %}</h1>
+    <table>
+        <tr>
+            <th>{% if session.language == 'km' %}អតិថិជន{% else %}Customer{% endif %}</th>
+            <th>{% if session.language == 'km' %}រថយន្ត{% else %}Car{% endif %}</th>
+            <th>{% if session.language == 'km' %}ថ្ងៃចាប់ផ្តើម{% else %}Start Date{% endif %}</th>
+            <th>{% if session.language == 'km' %}ថ្ងៃបញ្ចប់{% else %}End Date{% endif %}</th>
+            <th>{% if session.language == 'km' %}សកម្មភាព{% else %}Actions{% endif %}</th>
+        </tr>
+        {% for handover in handovers %}
+        <tr>
+            <td>{{ handover.username }}</td>
+            <td>{{ handover.car_model }}</td>
+            <td>{{ handover.start_date }}</td>
+            <td>{{ handover.end_date }}</td>
+            <td><a href="{{ url_for('process_handover', booking_id=handover.id) }}">{% if session.language == 'km' %}ដំណើរការ{% else %}Process{% endif %}</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

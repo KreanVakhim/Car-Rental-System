@@ -1,37 +1,87 @@
 <!DOCTYPE html>
-<html lang="km">
+<html lang="{{ session.get('language', 'en') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Car Rental System{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% block css %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    {% block js %}{% endblock %}
 </head>
-<body>
+<body data-theme="light">
     <header>
-        <nav>
-            <h1>🚗 Car Rental System</h1>
-            <ul>
-                <li><a href="{{ url_for('index') }}">ទំព័រដើម</a></li>
-                <li><a href="{{ url_for('cars') }}">រថយន្ត</a></li>
-                {% if session.user_type == 'admin' %}
-                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                {% endif %}
-                {% if session.logged_in %}
-                <li><a href="{{ url_for('logout') }}">ចាកចេញ</a></li>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Car Rental Logo" class="logo-img">Car Rental</a>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}">Home</a>
+                {% if session.loggedin %}
+                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('cars') }}">Cars</a>
+                    <a href="{{ url_for('booking_history') }}">Booking History</a>
+                    <a href="{{ url_for('profile') }}">Profile ({{ session.username }})</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
-                <li><a href="{{ url_for('login') }}">ចូល</a></li>
-                <li><a href="{{ url_for('register') }}">ចុះឈ្មោះ</a></li>
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('register') }}">Register</a>
                 {% endif %}
-            </ul>
+                <!-- Language Toggle -->
+                <select id="language-toggle" onchange="changeLanguage()">
+                    <option value="en" {% if session.language == 'en' %}selected{% endif %}>English</option>
+                    <option value="km" {% if session.language == 'km' %}selected{% endif %}>ខ្មែរ</option>
+                </select>
+                <!-- Dark Mode Toggle -->
+                <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode">🌙</button>
+            </div>
         </nav>
     </header>
     <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="flash-{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
     <footer>
-        <p>&copy; 2025 Car Rental System. All rights reserved.</p>
+        <div class="footer-content">
+            <p>&copy; 2025 Car Rental System. All rights reserved.</p>
+            <p>Contact: <a href="mailto:support@carrental.kh">support@carrental.kh</a> | Phone: +855 123 456 789</p>
+            <div class="social-links">
+                <a href="#" aria-label="Facebook">Facebook</a> | 
+                <a href="#" aria-label="Twitter">Twitter</a> | 
+                <a href="#" aria-label="Instagram">Instagram</a>
+            </div>
+        </div>
     </footer>
-    {% block extra_js %}{% endblock %}
+
+    <script>
+    function toggleTheme() {
+        const body = document.body;
+        body.dataset.theme = body.dataset.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', body.dataset.theme);
+    }
+
+    function changeLanguage() {
+        const lang = document.getElementById('language-toggle').value;
+        fetch('/set_language', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language: lang })
+        }).then(() => location.reload());
+    }
+
+    // Apply saved theme on load
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.dataset.theme = savedTheme;
+    });
+    </script>
 </body>
 </html>

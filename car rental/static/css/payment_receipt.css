@@ -1,1 +1,47 @@
-.receipt { max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; }
+.receipt-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.receipt-details, .booking-details {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.receipt-details p, .booking-details p {
+    margin: 10px 0;
+}
+.receipt-actions {
+    text-align: center;
+}
+.btn {
+    display: inline-block;
+    padding: 8px 15px;
+    margin: 5px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+.btn:hover {
+    opacity: 0.9;
+}
+@media (max-width: 600px) {
+    .receipt-container {
+        padding: 10px;
+    }
+}

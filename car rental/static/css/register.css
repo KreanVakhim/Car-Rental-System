@@ -1,1 +1,4 @@
-.login-form, .register-form { max-width: 400px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+/* static/css/register.css */
+/* Form styles */
+form { max-width: 400px; margin: auto; }
+input { display: block; width: 100%; margin: 10px 0; }

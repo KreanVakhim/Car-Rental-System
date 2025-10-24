@@ -1,14 +1,18 @@
-{% extends "base.html" %}
-{% block title %}ចូលប្រព័ន្ធ{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">{% endblock %}
+<!-- templates/login.html -->
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+{% block js %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}
 {% block content %}
-<div class="login-form">
-    <h2>ចូលប្រព័ន្ធ</h2>
-    <form method="POST" action="{{ url_for('login') }}">
-        <input type="email" name="email" placeholder="អ៊ីម៉ែល" required>
-        <input type="password" name="password" placeholder="ពាក្យសម្ងាត់" required>
-        <button type="submit">ចូល</button>
-    </form>
-    <p><a href="{{ url_for('register') }}">មិនមានគណនីទេ? ចុះឈ្មោះ</a></p>
-</div>
+<h1>Login</h1>
+<form method="POST">
+    <label>Username:</label><input type="text" name="username"><br>
+    <label>Password:</label><input type="password" name="password"><br>
+    <input type="submit" value="Login">
+</form>
+<a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
 {% endblock %}

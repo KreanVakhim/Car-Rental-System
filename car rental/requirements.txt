@@ -1,2 +1,8 @@
-Flask==2.3.3
-Flask-MySQLdb==1.0.1
+flask==3.0.3
+flask-mysqldb==2.0.0
+flask-mail==0.10.0
+mysqlclient==2.2.4
+itsdangerous==2.2.0
+pandas==2.2.2
+python-dotenv==1.0.1
+werkzeug==3.0.4

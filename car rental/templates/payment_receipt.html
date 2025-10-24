@@ -1,17 +1,108 @@
-{% extends "base.html" %}
-{% block title %}វិក្កយបត្រ{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/payment_receipt.css') }}">{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{% if session.language == 'km' %}បង្កាន់ដៃទូទាត់{% else %}Payment Receipt{% endif %}{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/payment_receipt.css') }}">
+{% endblock %}
+{% block js %}
+<script src="{{ url_for('static', filename='js/payment_receipt.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+{% endblock %}
 {% block content %}
-<div class="receipt">
-    <h2>វិក្កយបត្រ និងការបង់ប្រាក់ជោគជ័យ</h2>
-    <p><strong>លេខកក់:</strong> {{ receipt.booking_id }}</p>
-    <p><strong>រថយន្ត:</strong> {{ receipt.brand }} {{ receipt.model }}</p>
-    <p><strong>ចំនួនទឹកប្រាក់:</strong> ${{ receipt.total_amount }}</p>
-    <p><strong>វិធីបង់:</strong> {{ receipt.method }}</p>
-    <p><strong>លេខប្រតិបត្តិការ:</strong> {{ receipt.transaction_id }}</p>
-    <p><strong>កាលបរិច្ឆេទបង់:</strong> {{ receipt.paid_at }}</p>
-    <p><strong>ថ្ងៃចាប់ផ្តើមជួល:</strong> {{ receipt.start_date }}</p>
-    <a href="{{ url_for('after_booking') }}" class="btn-primary">បន្តទៅការបញ្ជាក់</a>
-    <a href="{{ url_for('dashboard') }}">មើល Dashboard</a>
+<div class="receipt-container" aria-label="{% if session.language == 'km' %}បង្កាន់ដៃទូទាត់{% else %}Payment Receipt{% endif %}">
+    <h1>{% if session.language == 'km' %}បង្កាន់ដៃទូទាត់{% else %}Payment Receipt{% endif %}</h1>
+    
+    <!-- Receipt Details -->
+    <div class="receipt-details">
+        <h2>{% if session.language == 'km' %}ព័ត៌មានទូទាត់{% else %}Payment Details{% endif %}</h2>
+        <p><strong>{% if session.language == 'km' %}លេខកក់{% else %}Booking ID{% endif %}:</strong> #{{ booking.id }}</p>
+        <p><strong>{% if session.language == 'km' %}ចំនួនទឹកប្រាក់{% else %}Amount{% endif %}:</strong> ${{ payment.amount }} {% if session.currency == 'KHR' %}(~{{ (payment.amount * exchange_rate) | round(0) }} KHR){% endif %}</p>
+        <p><strong>{% if session.language == 'km' %}វិធីទូទាត់{% else %}Payment Method{% endif %}:</strong> {{ payment.method }}</p>
+        <p><strong>{% if session.language == 'km' %}ស្ថានភាព{% else %}Status{% endif %}:</strong> {{ payment.status }}</p>
+        <p><strong>{% if session.language == 'km' %}កាលបរិច្ឆេទទូទាត់{% else %}Payment Date{% endif %}:</strong> {{ payment.created_at }}</p>
+    </div>
+    
+    <!-- Booking Details -->
+    <div class="booking-details">
+        <h2>{% if session.language == 'km' %}ព័ត៌មានកក់{% else %}Booking Details{% endif %}</h2>
+        <p><strong>{% if session.language == 'km' %}រថយន្ត{% else %}Car{% endif %}:</strong> {{ booking.car_model }}</p>
+        <p><strong>{% if session.language == 'km' %}ថ្ងៃចាប់ផ្តើម{% else %}Start Date{% endif %}:</strong> {{ booking.start_date }}</p>
+        <p><strong>{% if session.language == 'km' %}ថ្ងៃបញ្ចប់{% else %}End Date{% endif %}:</strong> {{ booking.end_date }}</p>
+        <p><strong>{% if session.language == 'km' %}ទីតាំងទទួល{% else %}Pickup Location{% endif %}:</strong> {{ booking.pickup_location }}</p>
+    </div>
+    
+    <!-- Actions -->
+    <div class="receipt-actions">
+        <button onclick="downloadReceipt()" class="btn btn-primary">{% if session.language == 'km' %}ទាញយកជា PDF{% else %}Download as PDF{% endif %}</button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">{% if session.language == 'km' %}ត្រឡប់ទៅផ្ទាំងគ្រប់គ្រង{% else %}Back to Dashboard{% endif %}</a>
+        <a href="{{ url_for('booking_history') }}" class="btn btn-secondary">{% if session.language == 'km' %}មើលប្រវត្តិកក់{% else %}View Booking History{% endif %}</a>
+    </div>
 </div>
+
+<style>
+.receipt-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.receipt-details, .booking-details {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.receipt-details p, .booking-details p {
+    margin: 10px 0;
+}
+.receipt-actions {
+    text-align: center;
+}
+.btn {
+    display: inline-block;
+    padding: 8px 15px;
+    margin: 5px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+.btn:hover {
+    opacity: 0.9;
+}
+@media (max-width: 600px) {
+    .receipt-container {
+        padding: 10px;
+    }
+}
+</style>
+
+<script>
+function downloadReceipt() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text('{% if session.language == "km" %}បង្កាន់ដៃទូទាត់{% else %}Payment Receipt{% endif %}', 20, 20);
+    doc.text('{% if session.language == "km" %}លេខកក់: #{{ booking.id }}{% else %}Booking ID: #{{ booking.id }}{% endif %}', 20, 30);
+    doc.text('{% if session.language == "km" %}ចំនួនទឹកប្រាក់: ${{ payment.amount }}{% else %}Amount: ${{ payment.amount }}{% endif %}', 20, 40);
+    doc.text('{% if session.language == "km" %}វិធីទូទាត់: {{ payment.method }}{% else %}Payment Method: {{ payment.method }}{% endif %}', 20, 50);
+    doc.text('{% if session.language == "km" %}ស្ថានភាព: {{ payment.status }}{% else %}Status: {{ payment.status }}{% endif %}', 20, 60);
+    doc.text('{% if session.language == "km" %}កាលបរិច្ឆេទទូទាត់: {{ payment.created_at }}{% else %}Payment Date: {{ payment.created_at }}{% endif %}', 20, 70);
+    doc.text('{% if session.language == "km" %}រថយន្ត: {{ booking.car_model }}{% else %}Car: {{ booking.car_model }}{% endif %}', 20, 80);
+    doc.text('{% if session.language == "km" %}ថ្ងៃចាប់ផ្តើម: {{ booking.start_date }}{% else %}Start Date: {{ booking.start_date }}{% endif %}', 20, 90);
+    doc.text('{% if session.language == "km" %}ថ្ងៃបញ្ចប់: {{ booking.end_date }}{% else %}End Date: {{ booking.end_date }}{% endif %}', 20, 100);
+    doc.text('{% if session.language == "km" %}ទីតាំងទទួល: {{ booking.pickup_location }}{% else %}Pickup Location: {{ booking.pickup_location }}{% endif %}', 20, 110);
+    doc.save('receipt-{{ booking.id }}.pdf');
+}
+</script>
 {% endblock %}

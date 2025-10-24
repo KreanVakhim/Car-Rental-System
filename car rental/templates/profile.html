@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}{% if session.language == 'km' %}ប្រវត្តិការកក់{% else %}Booking History{% endif %}{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/booking_history.css') }}">
+{% endblock %}
+{% block content %}
+<div class="booking-history-container">
+    <h1>{% if session.language == 'km' %}ប្រវត្តិការកក់{% else %}Booking History{% endif %}</h1>
+    {% if bookings %}
+        <table>
+            <thead>
+                <tr>
+                    <th>{% if session.language == 'km' %}លេខកក់{% else %}Booking ID{% endif %}</th>
+                    <th>{% if session.language == 'km' %}រថយន្ត{% else %}Car{% endif %}</th>
+                    <th>{% if session.language == 'km' %}ថ្ងៃចាប់ផ្តើម{% else %}Start Date{% endif %}</th>
+                    <th>{% if session.language == 'km' %}ថ្ងៃបញ្ចប់{% else %}End Date{% endif %}</th>
+                    <th>{% if session.language == 'km' %}ទីតាំងទទួល{% else %}Pickup Location{% endif %}</th>
+                    <th>{% if session.language == 'km' %}ស្ថានភាព{% else %}Status{% endif %}</th>
+                    <th>{% if session.language == 'km' %}ចំនួនសរុប{% else %}Total Amount{% endif %}</th>
+                    <th>{% if session.language == 'km' %}សកម្មភាព{% else %}Actions{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.id }}</td>
+                        <td>{{ booking.model }}</td>
+                        <td>{{ booking.start_date }}</td>
+                        <td>{{ booking.end_date }}</td>
+                        <td>{{ booking.pickup_location }}</td>
+                        <td>{{ booking.status }}</td>
+                        <td>${{ booking.total_amount }} ({{ booking.total_amount * exchange_rate }} KHR)</td>
+                        <td>
+                            {% if booking.status == 'Confirmed' %}
+                                <a href="{{ url_for('payment', booking_id=booking.id) }}">
+                                    {% if session.language == 'km' %}ទូទាត់{% else %}Pay Now{% endif %}
+                                </a>
+                            {% elif booking.status == 'Completed' %}
+                                <a href="{{ url_for('payment_receipt', booking_id=booking.id) }}">
+                                    {% if session.language == 'km' %}មើលបង្កាន់ដៃ{% else %}View Receipt{% endif %}
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>{% if session.language == 'km' %}មិនមានការកក់{% else %}No bookings found{% endif %}</p>
+    {% endif %}
+    <p><a href="{{ url_for('dashboard') }}">{% if session.language == 'km' %}ត្រឡប់ទៅផ្ទាំងគ្រប់គ្រង{% else %}Back to Dashboard{% endif %}</a></p>
+</div>
+{% endblock %}

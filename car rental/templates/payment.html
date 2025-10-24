@@ -1,22 +1,62 @@
-{% extends "base.html" %}
-{% block title %}បង់ប្រាក់{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{% if session.language == 'km' %}ទូទាត់{% else %}Payment{% endif %}{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/payment.css') }}">
+{% endblock %}
+{% block js %}
+<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+{% endblock %}
 {% block content %}
-<div class="payment-form">
-    <h2>បង់ប្រាក់សម្រាប់ការកក់</h2>
-    <p>ចំនួនទឹកប្រាក់: ${{ total }}</p>
-    <p>រថយន្ត: {{ booking.brand }} {{ booking.model }}</p>
-    <p>ថ្ងៃចាប់ផ្តើម: {{ booking.start_date }}</p>
-    <p>ថ្ងៃបញ្ចប់: {{ booking.end_date }}</p>
-    <form method="POST" action="{{ url_for('payment', booking_id=booking.id) }}">
-        <select name="method">
-            <option value="aba">ABA</option>
-            <option value="acleda">ACLEDA</option>
-            <option value="wing">Wing</option>
-            <option value="paypal">PayPal</option>
-        </select>
-        <input type="text" name="transaction_id" placeholder="លេខប្រតិបត្តិការ" required>
-        <button type="submit">បង់ប្រាក់</button>
+<div class="payment-container" aria-label="{% if session.language == 'km' %}ទម្រង់ទូទាត់{% else %}Payment Form{% endif %}">
+    <h1>{% if session.language == 'km' %}ទូទាត់សម្រាប់ការកក់ #{{ booking.id }}{% else %}Payment for Booking #{{ booking.id }}{% endif %}</h1>
+    
+    <!-- Booking Summary -->
+    <div class="booking-summary">
+        <h2>{% if session.language == 'km' %}ព័ត៌មានកក់{% else %}Booking Summary{% endif %}</h2>
+        <p><strong>{% if session.language == 'km' %}រថយន្ត{% else %}Car{% endif %}:</strong> {{ booking.car_model }}</p>
+        <p><strong>{% if session.language == 'km' %}ថ្ងៃចាប់ផ្តើម{% else %}Start Date{% endif %}:</strong> {{ booking.start_date }}</p>
+        <p><strong>{% if session.language == 'km' %}ថ្ងៃបញ្ចប់{% else %}End Date{% endif %}:</strong> {{ booking.end_date }}</p>
+        <p><strong>{% if session.language == 'km' %}ទីតាំងទទួល{% else %}Pickup Location{% endif %}:</strong> {{ booking.pickup_location }}</p>
+        <p><strong>{% if session.language == 'km' %}ចំនួនទឹកប្រាក់សរុប{% else %}Total Amount{% endif %}:</strong> ${{ booking.total_amount }} {% if session.currency == 'KHR' %}(~{{ (booking.total_amount * exchange_rate) | round(0) }} KHR){% endif %}</p>
+    </div>
+    
+    <!-- Payment Form -->
+    <form method="POST" id="payment-form">
+        <div class="form-group">
+            <label for="amount">{% if session.language == 'km' %}ចំនួនទឹកប្រាក់{% else %}Amount{% endif %}:</label>
+            <input type="number" name="amount" id="amount" value="{{ booking.total_amount }}" readonly aria-readonly="true">
+        </div>
+        <div class="form-group">
+            <label for="payment_method">{% if session.language == 'km' %}វិធីទូទាត់{% else %}Payment Method{% endif %}:</label>
+            <select name="payment_method" id="payment_method" required>
+                <option value="aba">ABA</option>
+                <option value="acleda">Acleda</option>
+                <option value="wing">Wing</option>
+                <option value="paypal">PayPal</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">{% if session.language == 'km' %}បង់ប្រាក់ឥឡូវ{% else %}Pay Now{% endif %}</button>
     </form>
+    
+    <p class="back-to-dashboard">
+        <a href="{{ url_for('dashboard') }}">{% if session.language == 'km' %}ត្រឡប់ទៅផ្ទាំងគ្រប់គ្រង{% else %}Back to Dashboard{% endif %}</a>
+    </p>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('payment-form');
+    form.addEventListener('submit', (e) => {
+        const amount = document.getElementById('amount').value;
+        const paymentMethod = document.getElementById('payment_method').value;
+        if (amount <= 0) {
+            e.preventDefault();
+            alert('{% if session.language == "km" %}ចំនួនទឹកប្រាក់មិនត្រឹមត្រូវ{% else %}Invalid amount{% endif %}');
+        }
+        if (!paymentMethod) {
+            e.preventDefault();
+            alert('{% if session.language == "km" %}សូមជ្រើសរើសវិធីទូទាត់{% else %}Please select a payment method{% endif %}');
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -1,10 +1,66 @@
-{% extends "base.html" %}
-{% block title %}ស្វាគមន៍{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/welcome.css') }}">{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{% if session.language == 'km' %}ទំព័រដើម{% else %}Home{% endif %}{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+{% block js %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
 {% block content %}
-<div class="welcome-hero">
-    <h2>ស្វាគមន៍មកកាន់ប្រព័ន្ធជួលរថយន្ត!</h2>
-    <p>ជ្រើសរើសរថយន្តសម្រាប់ការធ្វើដំណើររបស់អ្នក។</p>
-    <a href="{{ url_for('cars') }}" class="btn-primary">មើលរថយន្ត</a>
+<div class="index-container">
+    <!-- Hero Section -->
+    <section class="hero" aria-label="{% if session.language == 'km' %}ផ្នែកស្វាគមន៍{% else %}Welcome Section{% endif %}">
+        <h1>{% if session.language == 'km' %}ស្វាគមន៍មកកាន់ប្រព័ន្ធជួលរថយន្ត{% else %}Welcome to Car Rental System{% endif %}</h1>
+        <p>{% if session.language == 'km' %}ជួលរថយន្តបានយ៉ាងងាយស្រួលនិងឆាប់រហ័ស!{% else %}Browse and rent cars easily and quickly!{% endif %}</p>
+        <a href="{{ url_for('cars') }}" class="btn btn-primary">{% if session.language == 'km' %}ស្វែងរករថយន្តឥឡូវ{% else %}Browse Cars Now{% endif %}</a>
+        {% if not session.loggedin %}
+            <a href="{{ url_for('register') }}" class="btn btn-secondary">{% if session.language == 'km' %}ចុះឈ្មោះ{% else %}Sign Up{% endif %}</a>
+        {% endif %}
+    </section>
+
+    <!-- Promotional Banner -->
+    <section class="promo-banner">
+        <p>{% if session.language == 'km' %}បញ្ចុះតម្លៃ 20% សម្រាប់ការកក់ដំបូងរបស់អ្នក!{% else %}Get 20% off your first booking!{% endif %}</p>
+    </section>
+
+    <!-- Featured Cars -->
+    <section class="featured-cars">
+        <h2>{% if session.language == 'km' %}រថយន្តពិសេស{% else %}Featured Cars{% endif %}</h2>
+        {% if featured_cars %}
+        <div class="cars-grid">
+            {% for car in featured_cars %}
+            <div class="car-card">
+                {% if car.image_path %}
+                    <img src="{{ url_for('static', filename=car.image_path) }}" alt="{{ car.model }}" class="car-image">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/placeholder_car.jpg') }}" alt="Placeholder" class="car-image">
+                {% endif %}
+                <h3>{{ car.model }}</h3>
+                <p>{% if session.language == 'km' %}តម្លៃក្នុងមួយថ្ងៃ{% else %}Price per Day{% endif %}: ${{ car.price_per_day }} {% if session.currency == 'KHR' %}(~{{ (car.price_per_day * exchange_rate) | round(0) }} KHR){% endif %}</p>
+                <div class="car-actions">
+                    <a href="{{ url_for('booking', car_id=car.id) }}" class="btn btn-primary">{% if session.language == 'km' %}កក់ឥឡូវ{% else %}Book Now{% endif %}</a>
+                    <a href="{{ url_for('car_details', car_id=car.id) }}" class="btn btn-secondary">{% if session.language == 'km' %}មើលព័ត៌មានលម្អិត{% else %}View Details{% endif %}</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+            <p>{% if session.language == 'km' %}គ្មានរថយន្តពិសេសនៅពេលនេះ{% else %}No featured cars available{% endif %}</p>
+        {% endif %}
+    </section>
 </div>
+<form method="GET" action="{{ url_for('cars') }}" class="hero-search">
+    <input type="text" name="model" placeholder="{% if session.language == 'km' %}ស្វែងរករថយន្ត...{% else %}Search for a car...{% endif %}">
+    <button type="submit" class="btn btn-primary">{% if session.language == 'km' %}ស្វែងរក{% else %}Search{% endif %}</button>
+</form>
+<section class="testimonials">
+    <h2>{% if session.language == 'km' %}មតិអតិថិជន{% else %}Customer Testimonials{% endif %}</h2>
+    {% for review in reviews %}
+        <div class="testimonial">
+            <p>"{{ review.comment }}"</p>
+            <p>- {{ review.username }}</p>
+        </div>
+    {% endfor %}
+</section>
+
 {% endblock %}
