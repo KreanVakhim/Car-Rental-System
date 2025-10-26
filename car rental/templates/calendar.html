@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar.css') }}">{% endblock %}
+{% block content %}
+    <h1>Booking Calendar</h1>
+    <p>View availability (mock calendar here). In production, integrate FullCalendar JS.</p>
+{% endblock %}

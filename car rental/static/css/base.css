@@ -1,109 +1,129 @@
+/* base.css */
 :root {
-    --bg-color: #f9f9f9;
-    --text-color: #333;
-    --primary-color: #007bff;
-    --secondary-color: #6c757d;
-}
-
-[data-theme="dark"] {
-    --bg-color: #333;
-    --text-color: #f9f9f9;
-    --primary-color: #66b0ff;
-    --secondary-color: #adb5bd;
+    --primary-color: #d32f2f; /* Cambodian red (inspired by flag) */
+    --secondary-color: #0288d1; /* Blue for trust and reliability */
+    --accent-color: #ffca28; /* Gold inspired by Angkor Wat */
+    --background-light: #f5f5f5;
+    --background-dark: #1a1a1a;
+    --text-light: #333;
+    --text-dark: #f5f5f5;
 }
 
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: var(--bg-color);
-    color: var(--text-color);
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-light);
+    color: var(--text-light);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Dark Mode */
+body.dark-mode {
+    background-color: var(--background-dark);
+    color: var(--text-dark);
 }
 
 .navbar {
-    background: var(--primary-color);
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.logo img {
-    height: 40px;
-    vertical-align: middle;
-}
-
-.logo a {
-    color: white;
-    text-decoration: none;
-    font-size: 1.5em;
+.navbar-brand {
     font-weight: bold;
+    color: var(--primary-color) !important;
 }
 
-.nav-links {
+.nav-link:hover {
+    color: var(--accent-color) !important;
+}
+
+/* Search Bar */
+form[role="search"] {
+    max-width: 300px;
+}
+
+.form-control:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 5px rgba(2, 136, 209, 0.5);
+}
+
+/* Carousel */
+.carousel-item img {
+    max-height: 400px;
+    object-fit: cover;
+}
+
+.carousel-caption {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+}
+
+/* Support Chat Widget */
+.support-chat {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.support-chat .card {
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#chatToggle {
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
-.nav-links a, .nav-links select, .nav-links button {
-    color: white;
-    margin: 0 10px;
-    text-decoration: none;
-    font-size: 1em;
+/* Footer */
+footer {
+    background-color: var(--background-light);
 }
 
-.nav-links select, .nav-links button {
-    background: transparent;
-    border: 1px solid white;
-    padding: 5px;
-    color: white;
-    cursor: pointer;
+footer.dark-mode {
+    background-color: var(--background-dark);
 }
 
-.nav-links button#theme-toggle {
-    background: none;
-    border: none;
-    font-size: 1.2em;
+.social-links a {
+    font-size: 1.5rem;
+    transition: color 0.3s;
 }
 
-main {
-    padding: 20px;
-    min-height: calc(100vh - 150px);
+.social-links a:hover {
+    color: var(--accent-color);
 }
 
-.flash-messages {
-    list-style: none;
-    padding: 0;
-    margin: 10px 0;
-}
-
-.flash-success { color: green; }
-.flash-error { color: red; }
-
-.footer-content {
-    background: var(--secondary-color);
-    color: white;
-    text-align: center;
-    padding: 20px;
-}
-
-.footer-content a {
-    color: white;
-    text-decoration: none;
-}
-
-@media (max-width: 600px) {
-    .navbar {
-        flex-direction: column;
-        align-items: flex-start;
+/* Responsive Design */
+@media (max-width: 768px) {
+    .carousel-item img {
+        max-height: 250px;
     }
-    .nav-links {
-        flex-direction: column;
-        width: 100%;
-    }
-    .nav-links a, .nav-links select, .nav-links button {
-        margin: 5px 0;
-        width: 100%;
+
+    .navbar-nav {
         text-align: center;
     }
+
+    .support-chat .card {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
+/* Accessibility */
+.nav-link:focus, .btn:focus {
+    outline: 2px solid var(--secondary-color);
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }

@@ -1,2 +1,4 @@
-/* static/css/main.css */
-/* Any global overrides if needed */
+/* Common styles if needed */
+.alert {
+    margin-bottom: 20px;
+}

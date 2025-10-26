@@ -1,18 +1,17 @@
-<!-- templates/register.html -->
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block title %}Register{% endblock %}
-{% block css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
-{% endblock %}
-{% block js %}
-<script src="{{ url_for('static', filename='js/register.js') }}"></script>
-{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">{% endblock %}
 {% block content %}
-<h1>Register</h1>
-<form method="POST">
-    <label>Username:</label><input type="text" name="username"><br>
-    <label>Email:</label><input type="email" name="email"><br>
-    <label>Password:</label><input type="password" name="password"><br>
-    <input type="submit" value="Register">
-</form>
+    <h1>Register</h1>
+    <form method="post">
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Register</button>
+    </form>
 {% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Promotions{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/promotions.css') }}">{% endblock %}
+{% block content %}
+    <h1>Promotions</h1>
+    <ul>
+        {% for promo in promotions %}
+            <li>{{ promo[1] }} - Discount: {{ promo[3] }}% ({{ promo[2] }})</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

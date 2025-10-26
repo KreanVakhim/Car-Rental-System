@@ -1,133 +1,17 @@
-{% extends 'base.html' %}
-{% block title %}{% if session.language == 'km' %}កក់រថយន្ត{% else %}Book Car{% endif %}{% endblock %}
-{% block css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-{% endblock %}
-{% block js %}
-<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-{% endblock %}
+{% extends "base.html" %}
+{% block title %}Book Car{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">{% endblock %}
 {% block content %}
-<div class="booking-container">
-    <h1>{% if session.language == 'km' %}កក់រថយន្ត {{ car.model }}{% else %}Book {{ car.model }}{% endif %}</h1>
-    
-    <!-- Car Details -->
-    <div class="car-details">
-        <h2>{% if session.language == 'km' %}ព័ត៌មានរថយន្ត{% else %}Car Details{% endif %}</h2>
-        {% if car.image_path %}
-            <img src="{{ url_for('static', filename=car.image_path) }}" alt="{{ car.model }}" class="car-image">
-        {% endif %}
-        <p><strong>{% if session.language == 'km' %}ម៉ូដែល{% else %}Model{% endif %}:</strong> {{ car.model }}</p>
-        <p><strong>{% if session.language == 'km' %}តម្លៃក្នុងមួយថ្ងៃ{% else %}Price per Day{% endif %}:</strong> ${{ car.price_per_day }} {% if session.currency == 'KHR' %}(~{{ (car.price_per_day * exchange_rate) | round(0) }} KHR){% endif %}</p>
-        <p><strong>{% if session.language == 'km' %}ស្ថានភាព{% else %}Status{% endif %}:</strong> {{ car.status }}</p>
-    </div>
-
-    <!-- Booking Form -->
-    <form method="POST" id="booking-form">
-        <div class="form-group">
-            <label>{% if session.language == 'km' %}ថ្ងៃចាប់ផ្តើម{% else %}Start Date{% endif %}:</label>
-            <input type="text" name="start_date" id="start_date" required>
+    <h1>Book {{ car[2] }} {{ car[1] }}</h1>
+    <form method="post">
+        <div class="mb-3">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
         </div>
-        <div class="form-group">
-            <label>{% if session.language == 'km' %}ថ្ងៃបញ្ចប់{% else %}End Date{% endif %}:</label>
-            <input type="text" name="end_date" id="end_date" required>
+        <div class="mb-3">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" required>
         </div>
-        <div class="form-group">
-            <label>{% if session.language == 'km' %}ទីតាំងទទួលរថយន្ត{% else %}Pickup Location{% endif %}:</label>
-            <select name="pickup_location" required>
-                <option value="phnom_penh">Phnom Penh</option>
-                <option value="siem_reap">Siem Reap</option>
-                <option value="sihanoukville">Sihanoukville</option>
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary">{% if session.language == 'km' %}បញ្ជាក់ការកក់{% else %}Book Now{% endif %}</button>
+        <button type="submit" class="btn btn-primary">Submit Booking</button>
     </form>
-
-    <!-- Availability Calendar -->
-    <div class="calendar-container">
-        <h2>{% if session.language == 'km' %}ប្រតិទិនភាពអាចរកបាន{% else %}Availability Calendar{% endif %}</h2>
-        <div id="calendar"></div>
-    </div>
-</div>
-
-<style>
-.booking-container {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: var(--bg-color);
-}
-.car-details {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: white;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.car-image {
-    max-width: 100%;
-    height: auto;
-    border-radius: 5px;
-}
-.form-group {
-    margin: 15px 0;
-}
-.form-group label {
-    display: block;
-    font-weight: bold;
-}
-.form-group input, .form-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-.calendar-container {
-    margin-top: 20px;
-}
-@media (max-width: 600px) {
-    .booking-container { padding: 10px; }
-    .car-details, .form-group input, .form-group select { width: 100%; }
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Flatpickr for date inputs
-    const startDatePicker = flatpickr('#start_date', {
-        dateFormat: 'Y-m-d',
-        minDate: 'today',
-        disable: {{ unavailable_dates | tojson }},
-        onChange: (selectedDates) => {
-            endDatePicker.set('minDate', selectedDates[0]);
-        }
-    });
-    const endDatePicker = flatpickr('#end_date', {
-        dateFormat: 'Y-m-d',
-        minDate: 'today',
-        disable: {{ unavailable_dates | tojson }}
-    });
-
-    // Form validation
-    document.getElementById('booking-form').addEventListener('submit', (e) => {
-        const startDate = new Date(document.getElementById('start_date').value);
-        const endDate = new Date(document.getElementById('end_date').value);
-        if (endDate <= startDate) {
-            e.preventDefault();
-            alert('{% if session.language == "km" %}ថ្ងៃបញ្ចប់ត្រូវតែក្រោយថ្ងៃចាប់ផ្តើម{% else %}End date must be after start date{% endif %}');
-        }
-    });
-});
-</script>
 {% endblock %}

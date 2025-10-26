@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Reviews{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/reviews.css') }}">{% endblock %}
+{% block content %}
+    <h1>Customer Reviews</h1>
+    <ul>
+        {% for review in reviews %}
+            <li>Rating: {{ review[3] }} - {{ review[4] }}</li>
+        {% endfor %}
+    </ul>
+    {% if session.logged_in %}
+        <h2>Add Review</h2>
+        <form method="post">
+            <div class="mb-3">
+                <label for="car_id" class="form-label">Car ID</label>
+                <input type="number" class="form-control" id="car_id" name="car_id" required>
+            </div>
+            <div class="mb-3">
+                <label for="rating" class="form-label">Rating (1-5)</label>
+                <input type="number" class="form-control" id="rating" name="rating" min="1" max="5" required>
+            </div>
+            <div class="mb-3">
+                <label for="comment" class="form-label">Comment</label>
+                <textarea class="form-control" id="comment" name="comment"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    {% endif %}
+{% endblock %}

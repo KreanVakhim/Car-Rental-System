@@ -1,460 +1,641 @@
-from flask import Flask, render_template, request, session, flash, redirect, url_for, make_response
+from flask import Flask, render_template, flash, redirect, url_for, request, jsonify, session, Blueprint
 from flask_mysqldb import MySQL
-from flask_mail import Mail, Message
-from itsdangerous import URLSafeTimedSerializer
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_wtf import FlaskForm
+from wtforms import StringField, FloatField, SelectField, BooleanField, SubmitField, PasswordField
+from wtforms.validators import DataRequired, Email
+from functools import wraps
+from datetime import datetime, timedelta
 import MySQLdb.cursors
-from datetime import datetime
-import pandas as pd
 import os
-from dotenv import load_dotenv
 
+# Initialize Flask app
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with a secure key
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'demo_classa'
 
-# Load environment variables
-load_dotenv()
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_random_secret_key_1234567890')
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'localhost')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', '')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'car_rental')
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-
+# Initialize MySQL
 mysql = MySQL(app)
-mail = Mail(app)
-serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
-# Index route
-@app.route('/')
-def index():
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("SELECT * FROM cars WHERE status = 'Available' LIMIT 3")
-        featured_cars = cursor.fetchall()
-        cursor.close()
-        exchange_rate = 4100  # USD to KHR
-        return render_template('index.html', featured_cars=featured_cars, exchange_rate=exchange_rate, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return render_template('index.html', featured_cars=[], exchange_rate=4100, language=session.get('language', 'en'))
+# Initialize Flask-Login
+login_manager = LoginManager(app)
+login_manager.login_view = 'auth.login'
 
-# Login route
-@app.route('/login', methods=['GET', 'POST'])
+# User class for Flask-Login
+class User(UserMixin):
+    def __init__(self, id, username, email, role, is_active):
+        self.id = id
+        self.username = username
+        self.email = email
+        self.role = role
+        self.is_active = is_active
+
+# Flask-Login User Loader
+@login_manager.user_loader
+def load_user(user_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, username, email, role, is_active FROM users WHERE id = %s', (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
+    if user:
+        return User(user['id'], user['username'], user['email'], user['role'], user['is_active'])
+    return None
+
+# Role-based Decorators
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            flash('Access restricted to admins.', 'danger')
+            return redirect(url_for('home.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def staff_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role not in ['admin', 'staff']:
+            flash('Access restricted to admin or staff.', 'danger')
+            return redirect(url_for('home.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Template Filter for Date Formatting
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    return value.strftime('%Y-%m-%d') if isinstance(value, datetime) else value
+
+# Forms
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
+
+class CarForm(FlaskForm):
+    make = StringField('Make', validators=[DataRequired()])
+    model = StringField('Model', validators=[DataRequired()])
+    price_per_day = FloatField('Price per Day (USD)', validators=[DataRequired()])
+    status = SelectField('Status', choices=[('Available', 'Available'), ('Rented', 'Rented'), ('Under Maintenance', 'Under Maintenance')], validators=[DataRequired()])
+    image = StringField('Image File Name')
+    featured = BooleanField('Featured')
+    submit = SubmitField('Save')
+
+class UserForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    role = SelectField('Role', choices=[('admin', 'Admin'), ('staff', 'Staff'), ('customer', 'Customer')], validators=[DataRequired()])
+    is_active = BooleanField('Active')
+    avatar = StringField('Avatar File Name')
+    submit = SubmitField('Save')
+
+class PenaltyForm(FlaskForm):
+    penalty_amount = FloatField('Penalty Amount (USD)', validators=[DataRequired()])
+    description = StringField('Description', validators=[DataRequired()])
+    submit = SubmitField('Record Penalty')
+
+# Blueprints
+auth_bp = Blueprint('auth', __name__)
+home_bp = Blueprint('home', __name__)
+cars_bp = Blueprint('cars', __name__)
+users_bp = Blueprint('users', __name__)
+handovers_bp = Blueprint('handovers', __name__)
+lang_bp = Blueprint('lang', __name__)
+bookings_bp = Blueprint('bookings', __name__)
+
+# Create Database Tables
+def init_db():
+    cursor = mysql.connection.cursor()
+    # Create users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            email VARCHAR(120) UNIQUE NOT NULL,
+            password VARCHAR(100) NOT NULL,
+            role VARCHAR(20) DEFAULT 'customer',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            avatar VARCHAR(100)
+        )
+    ''')
+    # Create cars table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS cars (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            make VARCHAR(50) NOT NULL,
+            model VARCHAR(50) NOT NULL,
+            price_per_day FLOAT NOT NULL,
+            status VARCHAR(20) DEFAULT 'Available',
+            image VARCHAR(100),
+            featured BOOLEAN DEFAULT FALSE
+        )
+    ''')
+    # Create bookings table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bookings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            car_id INT NOT NULL,
+            start_date DATETIME NOT NULL,
+            end_date DATETIME NOT NULL,
+            status VARCHAR(20) DEFAULT 'Pending',
+            penalty_amount FLOAT DEFAULT 0.0,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+        )
+    ''')
+    # Create payments table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS payments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            booking_id INT NOT NULL,
+            payment_method VARCHAR(50) NOT NULL,
+            amount FLOAT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+        )
+    ''')
+    # Insert default admin user if not exists
+    cursor.execute('''
+        INSERT IGNORE INTO users (username, email, password, role, is_active)
+        VALUES (%s, %s, %s, %s, %s)
+    ''', ('admin', 'admin@example.com', 'admin123', 'admin', True))
+    # Insert sample car if not exists
+    cursor.execute('''
+        INSERT IGNORE INTO cars (make, model, price_per_day, status, image)
+        VALUES (%s, %s, %s, %s, %s)
+    ''', ('Toyota', 'Camry', 50.0, 'Available', 'toyota_camry.jpg'))
+    mysql.connection.commit()
+    cursor.close()
+
+# Authentication Routes
+@auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        try:
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
-            user = cursor.fetchone()
-            cursor.close()
-            if user and check_password_hash(user['password'], password):
-                session['loggedin'] = True
-                session['id'] = user['id']
-                session['username'] = user['username']
-                session['role'] = user['role']
-                session['language'] = user['language']
-                flash('{% if session.language == "km" %}ចូលគណនីជោគជ័យ{% else %}Logged in successfully{% endif %}', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('{% if session.language == "km" %}ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ{% else %}Invalid username or password{% endif %}', 'error')
-        except Exception as e:
-            flash(f'Error accessing database: {str(e)}', 'error')
-    return render_template('login.html', language=session.get('language', 'en'))
-
-# Register route
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        language = request.form.get('language', 'en')
-        try:
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT * FROM users WHERE username = %s OR email = %s', (username, email))
-            existing_user = cursor.fetchone()
-            if existing_user:
-                flash('{% if session.language == "km" %}ឈ្មោះអ្នកប្រើ ឬអ៊ីមែលមានរួចហើយ{% else %}Username or email already exists{% endif %}', 'error')
-            else:
-                hashed_password = generate_password_hash(password)
-                cursor.execute('INSERT INTO users (username, email, password, language) VALUES (%s, %s, %s, %s)', 
-                              (username, email, hashed_password, language))
-                mysql.connection.commit()
-                flash('{% if session.language == "km" %}ចុះឈ្មោះជោគជ័យ{% else %}Registration successful{% endif %}', 'success')
-                return redirect(url_for('login'))
-            cursor.close()
-        except Exception as e:
-            flash(f'Error accessing database: {str(e)}', 'error')
-    return render_template('register.html', language=session.get('language', 'en'))
-
-# Forgot Password route
-@app.route('/forgot_password', methods=['GET', 'POST'])
-def forgot_password():
-    if request.method == 'POST':
-        email = request.form['email']
-        try:
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
-            user = cursor.fetchone()
-            cursor.close()
-            if user:
-                token = serializer.dumps(email, salt='password-reset')
-                reset_url = url_for('reset_password', token=token, _external=True)
-                msg = Message('Password Reset Request', sender=app.config['MAIL_USERNAME'], recipients=[email])
-                msg.body = f'Reset your password here: {reset_url}\nThis link expires in 1 hour.'
-                mail.send(msg)
-                flash('{% if session.language == "km" %}តំណភ្ជាប់កំណត់ពាក្យសម្ងាត់ឡើងវិញបានផ្ញើទៅអ៊ីមែល{% else %}Password reset link sent to your email{% endif %}', 'success')
-            else:
-                flash('{% if session.language == "km" %}អ៊ីមែលមិនមានក្នុងប្រព័ន្ធ{% else %}Email not found{% endif %}', 'error')
-        except Exception as e:
-            flash(f'Error: {str(e)}', 'error')
-    return render_template('forgot_password.html', language=session.get('language', 'en'))
-
-# Reset Password route
-@app.route('/reset_password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    try:
-        email = serializer.loads(token, salt='password-reset', max_age=3600)
-    except Exception:
-        flash('{% if session.language == "km" %}តំណភ្ជាប់ផុតកំណត់ ឬមិនត្រឹមត្រូវ{% else %}Invalid or expired reset link{% endif %}', 'error')
-        return redirect(url_for('forgot_password'))
-    
-    if request.method == 'POST':
-        password = request.form['password']
-        try:
-            hashed_password = generate_password_hash(password)
-            cursor = mysql.connection.cursor()
-            cursor.execute('UPDATE users SET password = %s WHERE email = %s', (hashed_password, email))
-            mysql.connection.commit()
-            cursor.close()
-            flash('{% if session.language == "km" %}បានកំណត់ពាក្យសម្ងាត់ឡើងវិញជោគជ័យ{% else %}Password reset successfully{% endif %}', 'success')
-            return redirect(url_for('login'))
-        except Exception as e:
-            flash(f'Error accessing database: {str(e)}', 'error')
-    return render_template('reset_password.html', token=token, language=session.get('language', 'en'))
-
-# Dashboard route
-@app.route('/dashboard')
-def dashboard():
-    if 'loggedin' not in session:
-        flash('{% if session.language == "km" %}សូមចូលគណនីជាមុន{% else %}Please log in first{% endif %}', 'error')
-        return redirect(url_for('login'))
-    
-    try:
+    if current_user.is_authenticated:
+        return redirect(url_for('home.dashboard'))
+    form = LoginForm()
+    if form.validate_on_submit():
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        if session['role'] == 'admin':
-            cursor.execute('SELECT COUNT(*) AS user_count FROM users')
-            user_count = cursor.fetchone()['user_count']
-            cursor.execute('SELECT COUNT(*) AS car_count FROM cars')
-            car_count = cursor.fetchone()['car_count']
-            cursor.execute('SELECT COUNT(*) AS booking_count FROM bookings WHERE status = %s', ('Pending',))
-            pending_bookings = cursor.fetchone()['booking_count']
-            cursor.close()
-            return render_template('dashboard.html', user_count=user_count, car_count=car_count, 
-                                 pending_bookings=pending_bookings, role=session['role'], 
-                                 language=session.get('language', 'en'))
-        elif session['role'] == 'staff':
-            cursor.execute('SELECT b.*, c.model, u.username FROM bookings b JOIN cars c ON b.car_id = c.id JOIN users u ON b.user_id = u.id WHERE b.status = %s', ('Pending',))
-            pending_bookings = cursor.fetchall()
-            cursor.close()
-            return render_template('dashboard.html', pending_bookings=pending_bookings, role=session['role'], 
-                                 language=session.get('language', 'en'))
-        else:
-            cursor.execute('SELECT b.*, c.model FROM bookings b JOIN cars c ON b.car_id = c.id WHERE b.user_id = %s', (session['id'],))
-            user_bookings = cursor.fetchall()
-            cursor.close()
-            return render_template('dashboard.html', user_bookings=user_bookings, role=session['role'], 
-                                 language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('index'))
-
-# Profile route
-@app.route('/profile', methods=['GET', 'POST'])
-def profile():
-    if 'loggedin' not in session:
-        flash('{% if session.language == "km" %}សូមចូលគណនីជាមុន{% else %}Please log in first{% endif %}', 'error')
-        return redirect(url_for('login'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT id, username, email, role, loyalty_points, language FROM users WHERE id = %s', (session['id'],))
+        cursor.execute('SELECT id, username, email, role, is_active, password FROM users WHERE username = %s', (form.username.data,))
         user = cursor.fetchone()
-        
-        if not user:
-            cursor.close()
-            flash('{% if session.language == "km" %}រកមិនឃើញអ្នកប្រើ{% else %}User not found{% endif %}', 'error')
-            return redirect(url_for('login'))
-        
-        if request.method == 'POST':
-            language = request.form.get('language', 'en')
-            if language in ['en', 'km']:
-                cursor.execute('UPDATE users SET language = %s WHERE id = %s', (language, session['id']))
-                mysql.connection.commit()
-                session['language'] = language
-                flash('{% if session.language == "km" %}បានធ្វើបច្ចុប្បន្នភាសាដោយជោគជ័យ{% else %}Language updated successfully{% endif %}', 'success')
-            else:
-                flash('{% if session.language == "km" %}ភាសាមិនត្រឹមត្រូវ{% else %}Invalid language{% endif %}', 'error')
-            
-            cursor.close()
-            return redirect(url_for('profile'))
-        
         cursor.close()
-        return render_template('profile.html', user=user, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
+        if user and user['password'] == form.password.data:  # Use hashing in production
+            user_obj = User(user['id'], user['username'], user['email'], user['role'], user['is_active'])
+            login_user(user_obj)
+            session['language'] = 'en'
+            session['currency'] = 'USD'
+            flash('Logged in successfully.', 'success')
+            return redirect(url_for('home.dashboard'))
+        flash('Invalid username or password.', 'danger')
+    return render_template('login.html', form=form)
 
-# Cars route
-@app.route('/cars')
-def cars():
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("SELECT * FROM cars WHERE status = 'Available'")
-        cars = cursor.fetchall()
-        cursor.close()
-        exchange_rate = 4100
-        return render_template('cars.html', cars=cars, exchange_rate=exchange_rate, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return render_template('cars.html', cars=[], exchange_rate=4100, language=session.get('language', 'en'))
-
-# Car Details route
-@app.route('/car/<int:car_id>')
-def car_details(car_id):
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM cars WHERE id = %s', (car_id,))
-        car = cursor.fetchone()
-        cursor.close()
-        if car:
-            exchange_rate = 4100
-            return render_template('car_details.html', car=car, exchange_rate=exchange_rate, language=session.get('language', 'en'))
-        else:
-            flash('{% if session.language == "km" %}រកមិនឃើញរថយន្ត{% else %}Car not found{% endif %}', 'error')
-            return redirect(url_for('cars'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('cars'))
-
-# Booking route
-@app.route('/booking/<int:car_id>', methods=['GET', 'POST'])
-def booking(car_id):
-    if 'loggedin' not in session:
-        flash('{% if session.language == "km" %}សូមចូលគណនីជាមុន{% else %}Please log in first{% endif %}', 'error')
-        return redirect(url_for('login'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM cars WHERE id = %s AND status = %s', (car_id, 'Available'))
-        car = cursor.fetchone()
-        if not car:
-            cursor.close()
-            flash('{% if session.language == "km" %}រថយន្តមិនអាចជួលបាន{% else %}Car is not available{% endif %}', 'error')
-            return redirect(url_for('cars'))
-        
-        if request.method == 'POST':
-            start_date = request.form['start_date']
-            end_date = request.form['end_date']
-            pickup_location = request.form['pickup_location']
-            start = datetime.strptime(start_date, '%Y-%m-%d')
-            end = datetime.strptime(end_date, '%Y-%m-%d')
-            days = (end - start).days
-            if days <= 0:
-                flash('{% if session.language == "km" %}កាលបរិច្ឆេទមិនត្រឹមត្រូវ{% else %}Invalid date range{% endif %}', 'error')
-            else:
-                total_amount = days * car['price_per_day']
-                cursor.execute('INSERT INTO bookings (user_id, car_id, start_date, end_date, pickup_location, total_amount) VALUES (%s, %s, %s, %s, %s, %s)', 
-                              (session['id'], car_id, start_date, end_date, pickup_location, total_amount))
-                cursor.execute('UPDATE cars SET status = %s WHERE id = %s', ('Booked', car_id))
-                mysql.connection.commit()
-                cursor.close()
-                flash('{% if session.language == "km" %}កក់រថយន្តជោគជ័យ{% else %}Booking successful{% endif %}', 'success')
-                return redirect(url_for('booking_history'))
-        cursor.close()
-        exchange_rate = 4100
-        return render_template('booking.html', car=car, exchange_rate=exchange_rate, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('cars'))
-
-# Booking History route
-@app.route('/booking_history')
-def booking_history():
-    if 'loggedin' not in session:
-        flash('{% if session.language == "km" %}សូមចូលគណនីជាមុន{% else %}Please log in first{% endif %}', 'error')
-        return redirect(url_for('login'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT b.*, c.model FROM bookings b JOIN cars c ON b.car_id = c.id WHERE b.user_id = %s', (session['id'],))
-        bookings = cursor.fetchall()
-        cursor.close()
-        exchange_rate = 4100
-        return render_template('booking_history.html', bookings=bookings, exchange_rate=exchange_rate, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
-
-# Payment route
-@app.route('/payment/<int:booking_id>', methods=['GET', 'POST'])
-def payment(booking_id):
-    if 'loggedin' not in session:
-        flash('{% if session.language == "km" %}សូមចូលគណនីជាមុន{% else %}Please log in first{% endif %}', 'error')
-        return redirect(url_for('login'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT b.*, c.model FROM bookings b JOIN cars c ON b.car_id = c.id WHERE b.id = %s AND b.user_id = %s', (booking_id, session['id']))
-        booking = cursor.fetchone()
-        if not booking:
-            cursor.close()
-            flash('{% if session.language == "km" %}រកមិនឃើញការកក់{% else %}Booking not found{% endif %}', 'error')
-            return redirect(url_for('booking_history'))
-        
-        if request.method == 'POST':
-            method = request.form['payment_method']
-            cursor.execute('INSERT INTO payments (booking_id, amount, method, status) VALUES (%s, %s, %s, %s)', 
-                          (booking_id, booking['total_amount'], method, 'Completed'))
-            cursor.execute('UPDATE bookings SET status = %s WHERE id = %s', ('Confirmed', booking_id))
-            mysql.connection.commit()
-            
-            cursor.execute('SELECT email FROM users WHERE id = %s', (session['id'],))
-            user = cursor.fetchone()
-            msg = Message('Payment Receipt', sender=app.config['MAIL_USERNAME'], recipients=[user['email']])
-            msg.body = f'Payment for booking ID {booking_id} of {booking["model"]} completed successfully. Amount: ${booking["total_amount"]}.'
-            mail.send(msg)
-            
-            cursor.close()
-            flash('{% if session.language == "km" %}ការទូទាត់ជោគជ័យ{% else %}Payment successful{% endif %}', 'success')
-            return redirect(url_for('payment_receipt', booking_id=booking_id))
-        
-        cursor.close()
-        exchange_rate = 4100
-        return render_template('payment.html', booking=booking, exchange_rate=exchange_rate, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('booking_history'))
-
-# Payment Receipt route
-@app.route('/payment_receipt/<int:booking_id>')
-def payment_receipt(booking_id):
-    if 'loggedin' not in session:
-        flash('{% if session.language == "km" %}សូមចូលគណនីជាមុន{% else %}Please log in first{% endif %}', 'error')
-        return redirect(url_for('login'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT b.*, c.model, p.method, p.created_at FROM bookings b JOIN cars c ON b.car_id = c.id JOIN payments p ON b.id = p.booking_id WHERE b.id = %s AND b.user_id = %s', 
-                      (booking_id, session['id']))
-        receipt = cursor.fetchone()
-        cursor.close()
-        if receipt:
-            exchange_rate = 4100
-            return render_template('payment_receipt.html', receipt=receipt, exchange_rate=exchange_rate, language=session.get('language', 'en'))
-        else:
-            flash('{% if session.language == "km" %}រកមិនឃើញបង្កាន់ដៃ{% else %}Receipt not found{% endif %}', 'error')
-            return redirect(url_for('booking_history'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('booking_history'))
-
-# Manage Cars route (Admin only)
-@app.route('/manage_cars', methods=['GET', 'POST'])
-def manage_cars():
-    if 'loggedin' not in session or session['role'] != 'admin':
-        flash('{% if session.language == "km" %}តម្រូវឲ្យជាអ្នកគ្រប់គ្រង{% else %}Admin access required{% endif %}', 'error')
-        return redirect(url_for('dashboard'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        if request.method == 'POST':
-            model = request.form['model']
-            price_per_day = float(request.form['price_per_day'])
-            status = request.form['status']
-            image_path = request.form.get('image_path', 'images/placeholder_car.jpg')
-            cursor.execute('INSERT INTO cars (model, price_per_day, status, image_path) VALUES (%s, %s, %s, %s)', 
-                          (model, price_per_day, status, image_path))
-            mysql.connection.commit()
-            flash('{% if session.language == "km" %}បានបន្ថែមរថយន្តជោគជ័យ{% else %}Car added successfully{% endif %}', 'success')
-        
-        cursor.execute('SELECT * FROM cars')
-        cars = cursor.fetchall()
-        cursor.close()
-        return render_template('manage_cars.html', cars=cars, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
-
-# Manage Users route (Admin only)
-@app.route('/manage_users', methods=['GET', 'POST'])
-def manage_users():
-    if 'loggedin' not in session or session['role'] != 'admin':
-        flash('{% if session.language == "km" %}តម្រូវឲ្យជាអ្នកគ្រប់គ្រង{% else %}Admin access required{% endif %}', 'error')
-        return redirect(url_for('dashboard'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        if request.method == 'POST':
-            user_id = request.form['user_id']
-            role = request.form['role']
-            cursor.execute('UPDATE users SET role = %s WHERE id = %s', (role, user_id))
-            mysql.connection.commit()
-            flash('{% if session.language == "km" %}បានធ្វើបច្ចុប្បន្នភាពអ្នកប្រើជោគជ័យ{% else %}User updated successfully{% endif %}', 'success')
-        
-        cursor.execute('SELECT id, username, email, role, loyalty_points FROM users')
-        users = cursor.fetchall()
-        cursor.close()
-        return render_template('manage_users.html', users=users, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
-
-# Manage Handovers route (Staff only)
-@app.route('/manage_handovers', methods=['GET', 'POST'])
-def manage_handovers():
-    if 'loggedin' not in session or session['role'] != 'staff':
-        flash('{% if session.language == "km" %}តម្រូវឲ្យជាបុគ្គលិក{% else %}Staff access required{% endif %}', 'error')
-        return redirect(url_for('dashboard'))
-    
-    try:
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        if request.method == 'POST':
-            booking_id = request.form['booking_id']
-            action = request.form['action']
-            if action in ['Confirmed', 'Completed', 'Cancelled']:
-                cursor.execute('UPDATE bookings SET status = %s WHERE id = %s', (action, booking_id))
-                mysql.connection.commit()
-                if action == 'Completed':
-                    cursor.execute('UPDATE cars SET status = %s WHERE id = (SELECT car_id FROM bookings WHERE id = %s)', ('Available', booking_id))
-                    mysql.connection.commit()
-                flash('{% if session.language == "km" %}បានធ្វើបច្ចុប្បន្នភាពការកក់ជោគជ័យ{% else %}Booking updated successfully{% endif %}', 'success')
-        
-        cursor.execute('SELECT b.*, c.model, u.username FROM bookings b JOIN cars c ON b.car_id = c.id JOIN users u ON b.user_id = u.id WHERE b.status IN (%s, %s)', 
-                      ('Pending', 'Confirmed'))
-        bookings = cursor.fetchall()
-        cursor.close()
-        return render_template('manage_handovers.html', bookings=bookings, language=session.get('language', 'en'))
-    except Exception as e:
-        flash(f'Error accessing database: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
-
-# Logout route
-@app.route('/logout')
+@auth_bp.route('/logout')
+@login_required
 def logout():
-    session.pop('loggedin', None)
-    session.pop('id', None)
-    session.pop('username', None)
-    session.pop('role', None)
-    session.pop('language', None)
-    flash('{% if session.language == "km" %}បានចាកចេញជោគជ័យ{% else %}Logged out successfully{% endif %}', 'success')
-    return redirect(url_for('index'))
+    logout_user()
+    flash('Logged out successfully.', 'success')
+    return redirect(url_for('auth.login'))
+
+# Home Routes
+@home_bp.route('/')
+@home_bp.route('/dashboard')
+@login_required
+def dashboard():
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, make, model, price_per_day, status, image, featured FROM cars WHERE status = %s', ('Available',))
+    cars = cursor.fetchall()
+    cursor.close()
+    form = FlaskForm()
+    return render_template('dashboard.html', cars=cars, form=form)
+
+# Car Routes
+@cars_bp.route('/cars/manage')
+@login_required
+@admin_required
+def manage():
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, make, model, price_per_day, status, image, featured FROM cars ORDER BY make ASC LIMIT 10')
+    cars = cursor.fetchall()
+    cursor.close()
+    form = FlaskForm()
+    return render_template('manage_cars.html', cars=cars, exchange_rate=4100, form=form)
+
+@cars_bp.route('/cars/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add():
+    form = CarForm()
+    if form.validate_on_submit():
+        cursor = mysql.connection.cursor()
+        cursor.execute('''
+            INSERT INTO cars (make, model, price_per_day, status, image, featured)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        ''', (form.make.data, form.model.data, form.price_per_day.data, form.status.data, form.image.data, form.featured.data))
+        mysql.connection.commit()
+        cursor.close()
+        flash('Car added successfully.', 'success')
+        return redirect(url_for('cars.manage'))
+    return render_template('add_car.html', form=form)
+
+@cars_bp.route('/cars/edit/<int:car_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit(car_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, make, model, price_per_day, status, image, featured FROM cars WHERE id = %s', (car_id,))
+    car = cursor.fetchone()
+    cursor.close()
+    if not car:
+        flash('Car not found.', 'danger')
+        return redirect(url_for('cars.manage'))
+    form = CarForm(data=car)
+    if form.validate_on_submit():
+        cursor = mysql.connection.cursor()
+        cursor.execute('''
+            UPDATE cars SET make = %s, model = %s, price_per_day = %s, status = %s, image = %s, featured = %s
+            WHERE id = %s
+        ''', (form.make.data, form.model.data, form.price_per_day.data, form.status.data, form.image.data, form.featured.data, car_id))
+        mysql.connection.commit()
+        cursor.close()
+        flash('Car updated successfully.', 'success')
+        return redirect(url_for('cars.manage'))
+    return render_template('edit_car.html', form=form, car=car)
+
+@cars_bp.route('/cars/delete/<int:car_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete(car_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute('DELETE FROM cars WHERE id = %s', (car_id,))
+    mysql.connection.commit()
+    cursor.close()
+    flash('Car deleted successfully.', 'success')
+    return jsonify({'success': True})
+
+@cars_bp.route('/cars/bulk_delete', methods=['POST'])
+@login_required
+@admin_required
+def bulk_delete():
+    car_ids = request.form.getlist('car_ids')
+    cursor = mysql.connection.cursor()
+    cursor.execute('DELETE FROM cars WHERE id IN (%s)' % ','.join(['%s'] * len(car_ids)), tuple(car_ids))
+    mysql.connection.commit()
+    cursor.close()
+    flash('Selected cars deleted successfully.', 'success')
+    return jsonify({'success': True})
+
+@cars_bp.route('/cars/toggle_featured/<int:car_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_featured(car_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute('UPDATE cars SET featured = %s WHERE id = %s', (request.form.get('featured') == 'true', car_id))
+    mysql.connection.commit()
+    cursor.close()
+    return jsonify({'success': True})
+
+@cars_bp.route('/cars/details/<int:car_id>')
+@login_required
+@admin_required
+def details(car_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, make, model, price_per_day, status, image, featured FROM cars WHERE id = %s', (car_id,))
+    car = cursor.fetchone()
+    cursor.close()
+    if not car:
+        flash('Car not found.', 'danger')
+        return redirect(url_for('cars.manage'))
+    return render_template('car_details.html', car=car)
+
+# User Routes
+@users_bp.route('/users/manage')
+@login_required
+@admin_required
+def manage():
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, username, email, role, is_active, avatar FROM users ORDER BY username ASC LIMIT 10')
+    users = cursor.fetchall()
+    cursor.close()
+    form = FlaskForm()
+    return render_template('manage_users.html', users=users, form=form)
+
+@users_bp.route('/users/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add():
+    form = UserForm()
+    if form.validate_on_submit():
+        cursor = mysql.connection.cursor()
+        cursor.execute('''
+            INSERT INTO users (username, email, password, role, is_active, avatar)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        ''', (form.username.data, form.email.data, form.password.data, form.role.data, form.is_active.data, form.avatar.data))
+        mysql.connection.commit()
+        cursor.close()
+        flash('User added successfully.', 'success')
+        return redirect(url_for('users.manage'))
+    return render_template('add_user.html', form=form)
+
+@users_bp.route('/users/edit/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit(user_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, username, email, role, is_active, avatar FROM users WHERE id = %s', (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('users.manage'))
+    form = UserForm(data=user)
+    if form.validate_on_submit():
+        cursor = mysql.connection.cursor()
+        cursor.execute('''
+            UPDATE users SET username = %s, email = %s, password = %s, role = %s, is_active = %s, avatar = %s
+            WHERE id = %s
+        ''', (form.username.data, form.email.data, form.password.data or user['password'], form.role.data, form.is_active.data, form.avatar.data, user_id))
+        mysql.connection.commit()
+        cursor.close()
+        flash('User updated successfully.', 'success')
+        return redirect(url_for('users.manage'))
+    return render_template('edit_user.html', form=form, user=user)
+
+@users_bp.route('/users/delete/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete(user_id):
+    if user_id == current_user.id:
+        flash('Cannot delete your own account.', 'danger')
+        return jsonify({'error': 'Cannot delete own account'}), 403
+    cursor = mysql.connection.cursor()
+    cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
+    mysql.connection.commit()
+    cursor.close()
+    flash('User deleted successfully.', 'success')
+    return jsonify({'success': True})
+
+@users_bp.route('/users/bulk_delete', methods=['POST'])
+@login_required
+@admin_required
+def bulk_delete():
+    user_ids = request.form.getlist('user_ids')
+    if str(current_user.id) in user_ids:
+        flash('Cannot delete your own account.', 'danger')
+        return jsonify({'error': 'Cannot delete own account'}), 403
+    cursor = mysql.connection.cursor()
+    cursor.execute('DELETE FROM users WHERE id IN (%s)' % ','.join(['%s'] * len(user_ids)), tuple(user_ids))
+    mysql.connection.commit()
+    cursor.close()
+    flash('Selected users deleted successfully.', 'success')
+    return jsonify({'success': True})
+
+@users_bp.route('/users/toggle_status/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_status(user_id):
+    if user_id == current_user.id:
+        flash('Cannot modify your own account status.', 'danger')
+        return jsonify({'error': 'Cannot modify own account'}), 403
+    cursor = mysql.connection.cursor()
+    cursor.execute('UPDATE users SET is_active = %s WHERE id = %s', (request.form.get('action') == 'activate', user_id))
+    mysql.connection.commit()
+    cursor.close()
+    flash(f'User {request.form.get("action")}d successfully.', 'success')
+    return jsonify({'success': True})
+
+@users_bp.route('/users/bulk_status', methods=['POST'])
+@login_required
+@admin_required
+def bulk_status():
+    user_ids = request.form.getlist('user_ids')
+    if str(current_user.id) in user_ids:
+        flash('Cannot modify your own account status.', 'danger')
+        return jsonify({'error': 'Cannot modify own account'}), 403
+    cursor = mysql.connection.cursor()
+    cursor.execute('UPDATE users SET is_active = %s WHERE id IN (%s)' % ','.join(['%s'] * len(user_ids)), (request.form.get('action') == 'activate',) + tuple(user_ids))
+    mysql.connection.commit()
+    cursor.close()
+    flash(f'Selected users {request.form.get("action")}d successfully.', 'success')
+    return jsonify({'success': True})
+
+@users_bp.route('/users/details/<int:user_id>')
+@login_required
+@admin_required
+def details(user_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, username, email, role, is_active, avatar FROM users WHERE id = %s', (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('users.manage'))
+    return render_template('user_details.html', user=user)
+
+# Handover Routes
+@handovers_bp.route('/handovers')
+@login_required
+@staff_required
+def manage():
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT b.id, b.user_id, b.car_id, b.start_date, b.end_date, b.status, b.penalty_amount, u.username, c.make, c.model FROM bookings b JOIN users u ON b.user_id = u.id JOIN cars c ON b.car_id = c.id ORDER BY b.start_date DESC LIMIT 10')
+    handovers = cursor.fetchall()
+    cursor.close()
+    form = FlaskForm()
+    return render_template('manage_handovers.html', handovers=handovers, form=form)
+
+@handovers_bp.route('/handovers/process/<int:booking_id>', methods=['POST'])
+@login_required
+@staff_required
+def process(booking_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, user_id, car_id, status FROM bookings WHERE id = %s', (booking_id,))
+    booking = cursor.fetchone()
+    cursor.close()
+    if not booking:
+        flash('Booking not found.', 'danger')
+        return jsonify({'error': 'Booking not found'}), 404
+    action = request.form.get('action')
+    valid_transitions = {
+        'Pending': ['Handed Over'],
+        'Handed Over': ['Returned'],
+        'Returned': ['Inspected']
+    }
+    if action not in valid_transitions.get(booking['status'], []):
+        flash('Invalid action for current status.', 'danger')
+        return jsonify({'error': 'Invalid action'}), 400
+    cursor = mysql.connection.cursor()
+    cursor.execute('UPDATE bookings SET status = %s WHERE id = %s', (action.replace('_', ' ').title(), booking_id))
+    if action == 'handed_over':
+        cursor.execute('UPDATE cars SET status = %s WHERE id = %s', ('Rented', booking['car_id']))
+    elif action == 'inspected':
+        cursor.execute('UPDATE cars SET status = %s WHERE id = %s', ('Available', booking['car_id']))
+    mysql.connection.commit()
+    cursor.close()
+    flash(f'Booking marked as {action.replace("_", " ").title()}.', 'success')
+    return jsonify({'success': True})
+
+@handovers_bp.route('/handovers/bulk_action', methods=['POST'])
+@login_required
+@staff_required
+def bulk_action():
+    booking_ids = request.form.getlist('booking_ids')
+    action = request.form.get('action')
+    valid_status = 'Pending' if action == 'handover' else 'Handed Over' if action == 'return' else None
+    if not valid_status:
+        flash('Invalid bulk action.', 'danger')
+        return jsonify({'error': 'Invalid action'}), 400
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, user_id, car_id, status FROM bookings WHERE id IN (%s) AND status = %s' % ','.join(['%s'] * len(booking_ids)), tuple(booking_ids) + (valid_status,))
+    bookings = cursor.fetchall()
+    cursor.close()
+    cursor = mysql.connection.cursor()
+    for booking in bookings:
+        cursor.execute('UPDATE bookings SET status = %s WHERE id = %s', (action.replace('_', ' ').title(), booking['id']))
+        if action == 'handover':
+            cursor.execute('UPDATE cars SET status = %s WHERE id = %s', ('Rented', booking['car_id']))
+        elif action == 'return':
+            cursor.execute('UPDATE cars SET status = %s WHERE id = %s', ('Available', booking['car_id']))
+    mysql.connection.commit()
+    cursor.close()
+    flash(f'Selected bookings marked as {action.replace("_", " ").title()}.', 'success')
+    return jsonify({'success': True})
+
+@handovers_bp.route('/handovers/add_penalty/<int:booking_id>', methods=['GET', 'POST'])
+@login_required
+@staff_required
+def add_penalty(booking_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, user_id, car_id, status, penalty_amount FROM bookings WHERE id = %s', (booking_id,))
+    booking = cursor.fetchone()
+    cursor.close()
+    if not booking or booking['status'] != 'Returned':
+        flash('Can only add penalties for returned bookings.', 'danger')
+        return redirect(url_for('handovers.manage'))
+    form = PenaltyForm()
+    if form.validate_on_submit():
+        cursor = mysql.connection.cursor()
+        cursor.execute('UPDATE bookings SET penalty_amount = %s WHERE id = %s', (form.penalty_amount.data, booking_id))
+        mysql.connection.commit()
+        cursor.close()
+        flash('Penalty recorded successfully.', 'success')
+        return redirect(url_for('handovers.manage'))
+    return render_template('add_penalty.html', form=form, booking=booking)
+
+@handovers_bp.route('/bookings/details/<int:booking_id>')
+@login_required
+@staff_required
+def details(booking_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT b.id, b.user_id, b.car_id, b.start_date, b.end_date, b.status, b.penalty_amount, u.username, c.make, c.model FROM bookings b JOIN users u ON b.user_id = u.id JOIN cars c ON b.car_id = c.id WHERE b.id = %s', (booking_id,))
+    booking = cursor.fetchone()
+    cursor.close()
+    if not booking:
+        flash('Booking not found.', 'danger')
+        return redirect(url_for('handovers.manage'))
+    return render_template('booking_details.html', booking=booking)
+
+# Booking Routes
+@bookings_bp.route('/booking/after/<int:booking_id>')
+@login_required
+def after_booking(booking_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT b.id, b.user_id, b.car_id, b.start_date, b.end_date, b.status, b.penalty_amount, u.username, c.make, c.model FROM bookings b JOIN users u ON b.user_id = u.id JOIN cars c ON b.car_id = c.id WHERE b.id = %s', (booking_id,))
+    booking = cursor.fetchone()
+    cursor.close()
+    if not booking:
+        flash('Booking not found.', 'danger')
+        return redirect(url_for('home.dashboard'))
+    form = FlaskForm()
+    return render_template('after_booking.html', booking=booking, form=form)
+
+@bookings_bp.route('/payment/process/<int:booking_id>', methods=['POST'])
+@login_required
+def process_payment(booking_id):
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT b.id, b.user_id, b.car_id, b.start_date, b.end_date, b.status, c.price_per_day FROM bookings b JOIN cars c ON b.car_id = c.id WHERE b.id = %s', (booking_id,))
+    booking = cursor.fetchone()
+    cursor.close()
+    if not booking or booking['status'] != 'Pending':
+        flash('Booking already processed.', 'danger')
+        return jsonify({'error': 'Invalid booking status'}), 400
+    payment_method = request.form.get('payment_method')
+    # Calculate amount (price_per_day * days)
+    start_date = booking['start_date']
+    end_date = booking['end_date']
+    days = (end_date - start_date).days if isinstance(start_date, datetime) else 1
+    amount = booking['price_per_day'] * days
+    cursor = mysql.connection.cursor()
+    cursor.execute('UPDATE bookings SET status = %s WHERE id = %s', ('Handed Over', booking_id))
+    cursor.execute('UPDATE cars SET status = %s WHERE id = %s', ('Rented', booking['car_id']))
+    cursor.execute('INSERT INTO payments (booking_id, payment_method, amount) VALUES (%s, %s, %s)', (booking_id, payment_method, amount))
+    mysql.connection.commit()
+    cursor.close()
+    flash('Payment processed successfully.', 'success')
+    return jsonify({'success': True})
+
+@bookings_bp.route('/booking/create', methods=['POST'])
+@login_required
+def create_booking():
+    car_id = request.form.get('car_id')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT id, make, model, status FROM cars WHERE id = %s AND status = %s', (car_id, 'Available'))
+    car = cursor.fetchone()
+    cursor.close()
+    if not car:
+        flash('Car is not available.', 'danger')
+        return redirect(url_for('home.dashboard'))
+    try:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        if start_date < datetime.now() or end_date <= start_date:
+            flash('Invalid date range.', 'danger')
+            return redirect(url_for('home.dashboard'))
+    except ValueError:
+        flash('Invalid date format.', 'danger')
+        return redirect(url_for('home.dashboard'))
+    cursor = mysql.connection.cursor()
+    cursor.execute('''
+        INSERT INTO bookings (user_id, car_id, start_date, end_date, status)
+        VALUES (%s, %s, %s, %s, %s)
+    ''', (current_user.id, car_id, start_date, end_date, 'Pending'))
+    mysql.connection.commit()
+    cursor.close()
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT LAST_INSERT_ID() AS id')
+    booking_id = cursor.fetchone()['id']
+    cursor.close()
+    flash('Booking created successfully.', 'success')
+    return redirect(url_for('bookings.after_booking', booking_id=booking_id))
+
+# Language Routes
+@lang_bp.route('/language', methods=['GET', 'POST'])
+@login_required
+def language():
+    if request.method == 'POST':
+        session['language'] = request.form.get('language', 'en')
+        session['currency'] = request.form.get('currency', 'USD')
+        flash('Language and currency updated.', 'success')
+        return redirect(request.referrer or url_for('home.dashboard'))
+    return render_template('language.html')
+
+# Register Blueprints
+app.register_blueprint(auth_bp)
+app.register_blueprint(home_bp)
+app.register_blueprint(cars_bp)
+app.register_blueprint(users_bp)
+app.register_blueprint(handovers_bp)
+app.register_blueprint(lang_bp)
+app.register_blueprint(bookings_bp)
+
+# Initialize Database
+with app.app_context():
+    init_db()
 
 if __name__ == '__main__':
     app.run(debug=True)

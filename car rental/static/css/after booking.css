@@ -1,2 +1,4 @@
-/* static/css/after_booking.css */
-h1 { color: green; }
+h1 {
+    color: green;
+    text-align: center;
+}

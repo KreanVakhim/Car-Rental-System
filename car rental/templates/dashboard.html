@@ -1,86 +1,42 @@
-{% extends 'base.html' %}
-{% block title %}{% if session.language == 'km' %}ផ្ទាំងគ្រប់គ្រង{% else %}Dashboard{% endif %}{% endblock %}
-{% block css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.css">
-{% endblock %}
-{% block js %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-{% endblock %}
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
 {% block content %}
-<div class="dashboard-container">
-    <h1>{% if session.language == 'km' %}ស្វាគមន៍, {{ username }} (តួនាទី: {{ role | capitalize }}){% else %}Welcome, {{ username }} (Role: {{ role | capitalize }}){% endif %}</h1>
-
-    <!-- Customer Dashboard -->
-    {% if role == 'customer' %}
-    <div class="dashboard-grid">
-        <div class="widget">
-            <h2>{% if session.language == 'km' %}ការកក់ខាងមុខ{% else %}Upcoming Bookings{% endif %}</h2>
-            {% if upcoming_bookings %}
-                <ul>
-                    {% for booking in upcoming_bookings %}
-                        <li>{{ booking.car_model }} - {% if session.language == 'km' %}ពី {{ booking.start_date }} ដល់ {{ booking.end_date }}{% else %}From {{ booking.start_date }} to {{ booking.end_date }}{% endif %}</li>
-                    {% endfor %}
-                </ul>
-                <a href="{{ url_for('booking_history') }}" class="btn btn-primary">{% if session.language == 'km' %}មើលប្រវត្តិកក់{% else %}View Booking History{% endif %}</a>
-            {% else %}
-                <p>{% if session.language == 'km' %}គ្មានការកក់ខាងមុខ{% else %}No upcoming bookings{% endif %}</p>
-            {% endif %}
-            <a href="{{ url_for('cars') }}" class="btn btn-secondary">{% if session.language == 'km' %}ស្វែងរករថយន្ត{% else %}Browse Cars{% endif %}</a>
-        </div>
-        <div class="widget">
-            <h2>{% if session.language == 'km' %}ចំណុចស្មោះត្រង់{% else %}Loyalty Points{% endif %}</h2>
-            <p>{% if session.language == 'km' %}ចំណុចបច្ចុប្បន្ន: {{ loyalty_points | default(0) }}{% else %}Current Points: {{ loyalty_points | default(0) }}{% endif %}</p>
-        </div>
-    </div>
-
-    <!-- Admin Dashboard -->
-    {% elif role == 'admin' %}
-    <div class="dashboard-grid">
-        <div class="widget">
-            <h2>{% if session.language == 'km' %}គ្រប់គ្រងរថយន្ត{% else %}Manage Cars{% endif %}</h2>
-            <p>{% if session.language == 'km' %}ចំនួនរថយន្តសរុប: {{ total_cars }}{% else %}Total Cars: {{ total_cars }}{% endif %}</p>
-            <a href="{{ url_for('manage_cars') }}" class="btn btn-primary">{% if session.language == 'km' %}បន្ថែម/កែរថយន្ត{% else %}Add/Edit Cars{% endif %}</a>
-        </div>
-        <div class="widget">
-            <h2>{% if session.language == 'km' %}ទិន្នន័យប្រាក់ចំណូល{% else %}Revenue Analytics{% endif %}</h2>
-            <canvas id="revenueChart"></canvas>
-        </div>
-        <div class="widget">
-            <h2>{% if session.language == 'km' %}គ្រប់គ្រងអ្នកប្រើ{% else %}Manage Users{% endif %}</h2>
-            <a href="{{ url_for('manage_users') }}" class="btn btn-primary">{% if session.language == 'km' %}មើលអ្នកប្រើ{% else %}View Users{% endif %}</a>
-        </div>
-    </div>
-
-    <!-- Staff Dashboard -->
-    {% elif role == 'staff' %}
-    <div class="dashboard-grid">
-        <div class="widget">
-            <h2>{% if session.language == 'km' %}ការកក់ដែលមិនទាន់បញ្ចប់{% else %}Pending Handovers{% endif %}</h2>
-            {% if pending_handovers %}
-                <ul>
-                    {% for booking in pending_handovers %}
-                        <li>{{ booking.car_model }} - {% if session.language == 'km' %}ទទួលនៅ {{ booking.start_date }}{% else %}Pickup on {{ booking.start_date }}{% endif %}</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>{% if session.language == 'km' %}គ្មានការទទួលរថយន្ត{% else %}No pending handovers{% endif %}</p>
-            {% endif %}
-            <a href="{{ url_for('manage_handovers') }}" class="btn btn-primary">{% if session.language == 'km' %}គ្រប់គ្រងការទទួល/ប្រគល់{% else %}Manage Handovers{% endif %}</a>
-        </div>
-        <div class="widget">
-            <h2>{% if session.language == 'km' %}ការត្រឡប់រថយន្ត{% else %}Car Returns{% endif %}</h2>
-            {% if pending_returns %}
-                <ul>
-                    {% for booking in pending_returns %}
-                        <li>{{ booking.car_model }} - {% if session.language == 'km' %}ត្រឡប់នៅ {{ booking.end_date }}{% else %}Return on {{ booking.end_date }}{% endif %}</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>{% if session.language == 'km' %}គ្មានការត្រឡប់រថយន្ត{% else %}No pending returns{% endif %}</p>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-</div>
+    <h1>Admin Dashboard</h1>
+    <h2>Overview</h2>
+    <p>Daily Bookings: {{ daily_bookings }}</p>
+    <h2>Manage Cars</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Model</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for car in cars %}
+                <tr>
+                    <td>{{ car[0] }}</td>
+                    <td>{{ car[1] }}</td>
+                    <td>{{ car[5] }} ៛</td>
+                    <td><a href="#">Edit</a> | <a href="#">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h3>Add Car</h3>
+    <form method="post" action="/add_car">
+        <!-- Form fields for model, brand, etc. -->
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+    <h2>Manage Bookings</h2>
+    <table class="table">
+        <!-- Similar table for bookings -->
+    </table>
+    <h2>Manage Customers</h2>
+    <table class="table">
+        <!-- Table for customers -->
+    </table>
+{% endblock %}
