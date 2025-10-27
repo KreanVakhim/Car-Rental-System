@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}My Bookings{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bookings.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>My Bookings</h1>
+    {% if car_id %}
+        <form method="POST" action="{{ url_for('book', car_id=car_id) }}">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" required>
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date" required>
+            <label for="location_pickup">Pickup Location:</label>
+            <input type="text" id="location_pickup" name="location_pickup" placeholder="e.g., Phnom Penh Branch">
+            <label for="location_return">Return Location:</label>
+            <input type="text" id="location_return" name="location_return" placeholder="e.g., Phnom Penh Branch">
+            <label for="notes">Notes:</label>
+            <textarea id="notes" name="notes" placeholder="Any special requests"></textarea>
+            <button type="submit">Book Car</button>
+        </form>
+    {% endif %}
+    <table>
+        <tr>
+            <th>Car</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+            <th>Total Cost</th>
+            <th>Pickup Location</th>
+            <th>Return Location</th>
+            <th>Notes</th>
+            <th>Action</th>
+        </tr>
+        {% for booking in bookings %}
+            <tr>
+                <td>{{ booking[1] }} {{ booking[2] }}</td>
+                <td>{{ booking[3] }}</td>
+                <td>{{ booking[4] }}</td>
+                <td>{{ booking[5] }}</td>
+                <td>${{ booking[6] }}</td>
+                <td>{{ booking[7] }}</td>
+                <td>{{ booking[8] }}</td>
+                <td>{{ booking[9] }}</td>
+                <td>
+                    {% if booking[5] == 'Pending' %}
+                        <a href="{{ url_for('checkout', booking_id=booking[0]) }}">Proceed to Payment</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

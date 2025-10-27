@@ -1,8 +1,0 @@
-{% extends "base.html" %}
-{% block title %}Welcome{% endblock %}
-{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/welcome.css') }}">{% endblock %}
-{% block content %}
-    <h1>Welcome Back!</h1>
-    <p>View your bookings or browse cars.</p>
-    <a href="/cars" class="btn btn-primary">Browse Cars</a>
-{% endblock %}

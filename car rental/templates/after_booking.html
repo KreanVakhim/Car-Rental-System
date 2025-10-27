@@ -1,8 +1,0 @@
-{% extends "base.html" %}
-{% block title %}After Booking{% endblock %}
-{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/after_booking.css') }}">{% endblock %}
-{% block content %}
-    <h1>Booking Confirmation</h1>
-    <p>Your booking has been submitted. Await admin approval.</p>
-    <a href="/payment" class="btn btn-success">Proceed to Payment (Mock)</a>
-{% endblock %}

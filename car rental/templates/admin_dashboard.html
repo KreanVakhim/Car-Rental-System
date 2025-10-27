@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>Admin Dashboard</h2>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <h3>Cars</h3>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Price/Day</th>
+            <th>Status</th>
+            <th>Image</th>
+            <th>Action</th>
+        </tr>
+        {% for car in cars %}
+            <tr>
+                <td>{{ car[0] }}</td>
+                <td>{{ car[1] }}</td>
+                <td>{{ car[2] }}</td>
+                <td>${{ car[3] }}</td>
+                <td>{{ car[4] }}</td>
+                <td>{% if car[5] %}<img src="{{ url_for('static', filename='images/' + car[5]) }}" width="50" alt="{{ car[1] }} {{ car[2] }}">{% else %}No Image{% endif %}</td>
+                <td><a href="{{ url_for('update_car_image', car_id=car[0]) }}">Update Image</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+    <h3>Bookings</h3>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Car</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+        </tr>
+        {% for booking in bookings %}
+            <tr>
+                <td>{{ booking[0] }}</td>
+                <td>{{ booking[1] }}</td>
+                <td>{{ booking[2] }} {{ booking[3] }}</td>
+                <td>{{ booking[4] }}</td>
+                <td>{{ booking[5] }}</td>
+                <td>{{ booking[6] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('add_car') }}">Add New Car</a>
+</body>
+</html>

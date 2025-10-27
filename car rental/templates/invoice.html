@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Invoice{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/invoice.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>Invoice</h1>
+    <p>Invoice ID: {{ invoice[0] }}</p>
+    <p>Car: {{ invoice[4] }} {{ invoice[5] }}</p>
+    <p>Amount: ${{ invoice[1] }}</p>
+    <p>Penalty: ${{ invoice[2] }}</p>
+    <p>Issue Date: {{ invoice[3] }}</p>
+{% endblock %}

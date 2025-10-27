@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Checkout{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>Checkout</h1>
+    <form method="POST">
+        <label for="payment_method">Payment Method:</label>
+        <select id="payment_method" name="payment_method" required>
+            <option value="Aclida">Aclida</option>
+            <option value="ABA">ABA</option>
+            <option value="Wing">Wing</option>
+            <option value="PayPal">PayPal</option>
+        </select>
+        <button type="submit">Pay Now</button>
+    </form>
+{% endblock %}

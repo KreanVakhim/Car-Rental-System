@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Staff Check{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/staff_check.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>Staff Check</h1>
+    <form method="POST">
+        <label for="booking_id">Select Booking:</label>
+        <select id="booking_id" name="booking_id" required>
+            {% for booking in bookings %}
+                <option value="{{ booking[0] }}">{{ booking[1] }} - {{ booking[2] }} {{ booking[3] }}</option>
+            {% endfor %}
+        </select>
+        <label for="penalty">Penalty (if any):</label>
+        <input type="number" id="penalty" name="penalty" step="0.01" min="0" value="0">
+        <button type="submit">Process Return</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Car Image</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>Update Image for {{ car[1] }} {{ car[2] }}</h2>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('update_car_image', car_id=car[0]) }}" enctype="multipart/form-data">
+        <label for="image">Upload New Image:</label>
+        <input type="file" id="image" name="image" accept=".png,.jpg,.jpeg,.gif" required><br>
+        <button type="submit">Update Image</button>
+    </form>
+    <a href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
+</body>
+</html>

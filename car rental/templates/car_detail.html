@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Car Details - {{ car[1] }} {{ car[2] }}{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/car_detail.css') }}">
+{% endblock %}
+{% block content %}
+    <div class="car-detail-container">
+        <h1>{{ car[1] }} {{ car[2] }} <small class="year">({{ car[7]|default('N/A') }})</small></h1>
+        
+        <!-- Car Image -->
+        <div class="car-image">
+            <img src="{% if car[5] %}{{ url_for('static', filename='images/' + car[5]) }}{% else %}{{ url_for('static', filename='images/placeholder.jpg') }}{% endif %}" alt="{{ car[1] }} {{ car[2] }}" class="car-photo">
+        </div>
+
+        <!-- Car Details Section -->
+        <div class="car-info">
+            <h2>Details</h2>
+            <p><strong>Price:</strong> ${{ car[3] }}/day</p>
+            <p><strong>Status:</strong> {{ car[4] }}</p>
+            <p><strong>Fuel Type:</strong> {{ car[8]|default('Unknown') }}</p>
+            <p><strong>Transmission:</strong> {{ car[9]|default('N/A') }}</p>
+            <p><strong>Featured:</strong> {% if car[6] == 1 %}Yes{% else %}No{% endif %}</p>
+        </div>
+
+        <!-- Booking Section -->
+        {% if car[4] == 'Available' and is_logged_in() %}
+            <div class="booking-section">
+                <h2>Book This Car</h2>
+                <form method="POST" action="{{ url_for('book', car_id=car[0]) }}">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" required>
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" required>
+                    <label for="location_pickup">Pickup Location:</label>
+                    <input type="text" id="location_pickup" name="location_pickup" placeholder="e.g., Phnom Penh Branch">
+                    <label for="location_return">Return Location:</label>
+                    <input type="text" id="location_return" name="location_return" placeholder="e.g., Phnom Penh Branch">
+                    <label for="notes">Notes:</label>
+                    <textarea id="notes" name="notes" placeholder="Any special requests"></textarea>
+                    <button type="submit" class="btn-book">Book Now</button>
+                </form>
+            </div>
+        {% else %}
+            <p class="unavailable-message">This car is currently unavailable for booking.</p>
+        {% endif %}
+
+        <!-- Reviews Section (Placeholder for future functionality) -->
+        <div class="reviews-section">
+            <h2>Customer Reviews</h2>
+            <p>No reviews yet. Be the first to leave a review!</p>
+            {% if is_logged_in() %}
+                <form method="POST" action="{{ url_for('add_review', car_id=car[0]) }}" class="review-form">
+                    <label for="rating">Rating (1-5):</label>
+                    <input type="number" id="rating" name="rating" min="1" max="5" required>
+                    <label for="comment">Comment:</label>
+                    <textarea id="comment" name="comment" placeholder="Share your experience" required></textarea>
+                    <button type="submit" class="btn-submit">Submit Review</button>
+                </form>
+            {% else %}
+                <p>Please <a href="{{ url_for('login') }}">log in</a> to leave a review.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
