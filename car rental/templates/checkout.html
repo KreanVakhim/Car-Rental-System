@@ -1,18 +1,88 @@
-{% extends 'base.html' %}
-{% block title %}Checkout{% endblock %}
-{% block css %}
+{% extends "base.html" %}
+{% block title %}Checkout - {{ booking.brand }} {{ booking.model }}{% endblock %}
+
+{% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
 {% endblock %}
+
 {% block content %}
-    <h1>Checkout</h1>
-    <form method="POST">
-        <label for="payment_method">Payment Method:</label>
-        <select id="payment_method" name="payment_method" required>
-            <option value="Aclida">Aclida</option>
-            <option value="ABA">ABA</option>
-            <option value="Wing">Wing</option>
-            <option value="PayPal">PayPal</option>
-        </select>
-        <button type="submit">Pay Now</button>
-    </form>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="checkout-card">
+                <div class="card-header bg-success text-white text-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Complete Your Payment
+                    </h2>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Booking Summary -->
+                    <div class="booking-summary p-3 rounded mb-4">
+                        <h5 class="fw-bold text-primary">
+                            {{ booking.brand }} {{ booking.model }}
+                        </h5>
+                        <div class="row text-muted small">
+                            <div class="col-6">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                <strong>From:</strong> {{ booking.start_date }}
+                            </div>
+                            <div class="col-6">
+                                <i class="fas fa-calendar-check me-1"></i>
+                                <strong>To:</strong> {{ booking.end_date }}
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total Amount:</span>
+                            <span class="text-success fs-4">${{ "%.2f"|format(booking.total_cost) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Form -->
+                    <form method="POST" class="payment-form">
+                        <div class="mb-4">
+                            <label for="payment_method" class="form-label fw-semibold">
+                                <i class="fas fa-university me-2"></i>
+                                Select Payment Method
+                            </label>
+                            <select id="payment_method" 
+                                    name="payment_method" 
+                                    class="form-select form-select-lg payment-select" 
+                                    required>
+                                <option value="" disabled selected>-- Choose Payment --</option>
+                                <option value="ACLEDA">ACLEDA Bank</option>
+                                <option value="ABA">ABA Bank</option>
+                                <option value="WING">Wing Money</option>
+                                <option value="PAYPAL">PayPal</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" 
+                                class="btn btn-success btn-lg w-100 pay-now-btn">
+                            <i class="fas fa-lock me-2"></i>
+                            Pay ${{ "%.2f"|format(booking.total_cost) }} Now
+                        </button>
+                    </form>
+
+                    <!-- Security Note -->
+                    <div class="security-note text-center mt-4 p-3 rounded">
+                        <i class="fas fa-shield-alt text-success me-2"></i>
+                        <small class="text-muted">
+                            Your payment is secure. We use encrypted connections.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Link -->
+            <div class="text-center mt-3">
+                <a href="{{ url_for('bookings') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Back to Bookings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

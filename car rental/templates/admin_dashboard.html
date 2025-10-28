@@ -1,62 +1,123 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <h2>Admin Dashboard</h2>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    <h3>Cars</h3>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Brand</th>
-            <th>Model</th>
-            <th>Price/Day</th>
-            <th>Status</th>
-            <th>Image</th>
-            <th>Action</th>
-        </tr>
+{% extends "base.html" %}
+{% block title %}
+    {% if session.lang == 'km' %}ផ្ទាំងគ្រប់គ្រង - ប្រព័ន្ធជួលរថយន្ត{% else %}Admin Dashboard - Car Rental{% endif %}
+{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-success">
+            {% if session.lang == 'km' %}ផ្ទាំងគ្រប់គ្រង{% else %}Admin Dashboard{% endif %}
+        </h2>
+        <p class="text-muted">
+            {% if session.lang == 'km' %}
+                គ្រប់គ្រងរថយន្ត ការកក់ និងអ្នកប្រើ
+            {% else %}
+                Manage cars, bookings, and users
+            {% endif %}
+        </p>
+        <div class="mb-4">
+            <a href="{{ url_for('add_car') }}" class="btn btn-primary btn-lg action-btn">
+                <i class="fas fa-plus-circle me-2"></i>
+                {% if session.lang == 'km' %}បន្ថែមរថយន្ត{% else %}Add Car{% endif %}
+            </a>
+            <a href="{{ url_for('manage_users') }}" class="btn btn-info btn-lg action-btn">
+                <i class="fas fa-users me-2"></i>
+                {% if session.lang == 'km' %}គ្រប់គ្រងអ្នកប្រើ{% else %}Manage Users{% endif %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Cars Section -->
+    <h3 class="mb-4">
+        {% if session.lang == 'km' %}រថយន្ត{% else %}Cars{% endif %}
+    </h3>
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
         {% for car in cars %}
-            <tr>
-                <td>{{ car[0] }}</td>
-                <td>{{ car[1] }}</td>
-                <td>{{ car[2] }}</td>
-                <td>${{ car[3] }}</td>
-                <td>{{ car[4] }}</td>
-                <td>{% if car[5] %}<img src="{{ url_for('static', filename='images/' + car[5]) }}" width="50" alt="{{ car[1] }} {{ car[2] }}">{% else %}No Image{% endif %}</td>
-                <td><a href="{{ url_for('update_car_image', car_id=car[0]) }}">Update Image</a></td>
-            </tr>
+            <div class="col">
+                <div class="card h-100 shadow border-0">
+                    {% if car.image %}
+                        <img src="{{ url_for('static', filename='images/' + car.image) }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="fas fa-car fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ car.brand }} {{ car.model }}</h5>
+                        <p class="card-text">
+                            {% if session.lang == 'km' %}
+                                តម្លៃ: ${{ car.price_per_day }}/ថ្ងៃ<br>
+                                ស្ថានភាព: {{ {'Available': 'អាចជួលបាន', 'Rented': 'បានជួល', 'Maintenance': 'ថែទាំ'}[car.status] }}
+                            {% else %}
+                                Price: ${{ car.price_per_day }}/day<br>
+                                Status: {{ car.status }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="card-footer text-center">
+                        <a href="{{ url_for('update_car_image', car_id=car.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-image me-2"></i>
+                            {% if session.lang == 'km' %}ផ្លាស់ប្តូររូបភាព{% else %}Update Image{% endif %}
+                        </a>
+                        <form action="{{ url_for('delete_car', car_id=car.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('{% if session.lang == \'km\' %}តើអ្នកប្រាកដជាចង់លុបរថយន្តនេះ?{% else %}Are you sure you want to delete this car?{% endif %}')">
+                                <i class="fas fa-trash me-2"></i>
+                                {% if session.lang == 'km' %}លុប{% else %}Delete{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12 text-center">
+                <p class="text-muted">
+                    {% if session.lang == 'km' %}គ្មានរថយន្ត{% else %}No cars available{% endif %}
+                </p>
+            </div>
         {% endfor %}
-    </table>
-    <h3>Bookings</h3>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>User</th>
-            <th>Car</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Status</th>
-        </tr>
-        {% for booking in bookings %}
-            <tr>
-                <td>{{ booking[0] }}</td>
-                <td>{{ booking[1] }}</td>
-                <td>{{ booking[2] }} {{ booking[3] }}</td>
-                <td>{{ booking[4] }}</td>
-                <td>{{ booking[5] }}</td>
-                <td>{{ booking[6] }}</td>
-            </tr>
-        {% endfor %}
-    </table>
-    <a href="{{ url_for('add_car') }}">Add New Car</a>
-</body>
-</html>
+    </div>
+
+    <!-- Bookings Section -->
+    <h3 class="mb-4">
+        {% if session.lang == 'km' %}ការកក់{% else %}Bookings{% endif %}
+    </h3>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>{% if session.lang == 'km' %}លេខកក់{% else %}Booking ID{% endif %}</th>
+                    <th>{% if session.lang == 'km' %}អ្នកប្រើ{% else %}User{% endif %}</th>
+                    <th>{% if session.lang == 'km' %}រថយន្ត{% else %}Car{% endif %}</th>
+                    <th>{% if session.lang == 'km' %}ថ្ងៃចាប់ផ្តើម{% else %}Start Date{% endif %}</th>
+                    <th>{% if session.lang == 'km' %}ថ្ងៃបញ្ចប់{% else %}End Date{% endif %}</th>
+                    <th>{% if session.lang == 'km' %}ស្ថានភាព{% else %}Status{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.id }}</td>
+                        <td>{{ booking.username }}</td>
+                        <td>{{ booking.brand }} {{ booking.model }}</td>
+                        <td>{{ booking.start_date }}</td>
+                        <td>{{ booking.end_date }}</td>
+                        <td>
+                            {% if session.lang == 'km' %}
+                                {{ {'Pending': 'រង់ចាំ', 'Confirmed': 'បញ្ជាក់', 'Completed': 'បញ្ចប់', 'Cancelled': 'បោះបង់'}[booking.status] }}
+                            {% else %}
+                                {{ booking.status }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            {% if session.lang == 'km' %}គ្មានការកក់{% else %}No bookings{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

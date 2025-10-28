@@ -1,0 +1,112 @@
+<!-- templates/QR_code_payment.html -->
+{% extends "base.html" %}
+{% block title %}QR Code Payment{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<div class="container mt-4 text-center">
+    <h3 class="mb-3">
+        {% if session.get('lang', 'km') == 'en' %}
+            QR Code Payment
+        {% else %}
+            បង់ប្រាក់តាម QR Code
+        {% endif %}
+    </h3>
+    <p><strong>ការកក់ #{{ booking.id }}</strong> <span class="badge bg-warning text-dark">{{ booking.status }}</span></p>
+    <p>
+        {% if session.get('lang', 'km') == 'en' %}
+            Total: <strong>${{ '%.2f'|format(booking.total_cost) }}</strong>
+        {% else %}
+            សរុប: <strong>${{ '%.2f'|format(booking.total_cost) }}</strong>
+        {% endif %}
+    </p>
+
+    <!-- Error Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert alert-{{ messages[0][0] }} alert-dismissible fade show" role="alert">
+                {{ messages[0][1] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-4 mb-3">
+            <div class="card text-center qr-card">
+                <div class="card-header bg-primary text-white">ABA</div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename='qr/aba_' + booking.id|string + '.png') }}"
+                         class="img-fluid qr-image"
+                         alt="ABA QR Code"
+                         aria-label="QR code for ABA payment"
+                         style="max-width: 200px;">
+                    <p class="mt-2 qr-instruction">
+                        {% if session.get('lang', 'km') == 'en' %}
+                            Scan with ABA App
+                        {% else %}
+                            ស្កេនជាមួយ ABA App
+                        {% endif %}
+                        <span class="instruction-tooltip">
+                            {% if session.get('lang', 'km') == 'en' %}
+                                Open ABA app, select "Scan QR," and point at this code.
+                            {% else %}
+                                បើក ABA app, ជ្រើស "ស្កេន QR" ហើយសំដៅទៅកាន់កូដនេះ។
+                            {% endif %}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center qr-card">
+                <div class="card-header bg-success text-white">Wing</div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename='qr/wing_' + booking.id|string + '.png') }}"
+                         class="img-fluid qr-image"
+                         alt="Wing QR Code"
+                         aria-label="QR code for Wing payment"
+                         style="max-width: 200px;">
+                    <p class="mt-2 qr-instruction">
+                        {% if session.get('lang', 'km') == 'en' %}
+                            Scan with Wing App
+                        {% else %}
+                            ស្កេនជាមួយ Wing App
+                        {% endif %}
+                        <span class="instruction-tooltip">
+                            {% if session.get('lang', 'km') == 'en' %}
+                                Open Wing app, select "Scan QR," and point at this code.
+                            {% else %}
+                                បើក Wing app, ជ្រើស "ស្កេន QR" ហើយសំដៅទៅកាន់កូដនេះ។
+                            {% endif %}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <p class="text-muted">
+            {% if session.get('lang', 'km') == 'en' %}
+                After payment, please wait for staff confirmation.
+            {% else %}
+                បន្ទាប់ពីបង់ប្រាក់រួច សូមរង់ចាំ Staff បញ្ជាក់។
+            {% endif %}
+        </p>
+        <p class="text-danger" id="payment-note">
+            {% if session.get('lang', 'km') == 'en' %}
+                * Payment must be confirmed within 24 hours (by {{ payment_deadline }}).
+            {% else %}
+                * ការបង់ប្រាក់ត្រូវបញ្ជាក់ក្នុងរយៈពេល 24 ម៉ោង (នៅ {{ payment_deadline }})។
+            {% endif %}
+        </p>
+        <a href="{{ url_for('bookings') }}" class="btn btn-secondary">
+            {% if session.get('lang', 'km') == 'en' %}
+                Back
+            {% else %}
+                ត្រឡប់ក្រោយ
+            {% endif %}
+        </a>
+    </div>
+</div>
+{% endblock %}

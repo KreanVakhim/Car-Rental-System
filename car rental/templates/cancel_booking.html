@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{% if session.lang == 'km' %}បោះបង់ការកក់{% else %}Cancel Booking{% endif %}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="text-center mb-4">
+            {% if session.lang == 'km' %}បោះបង់ការកក់: {{ booking.brand }} {{ booking.model }}{% else %}Cancel Booking: {{ booking.brand }} {{ booking.model }}{% endif %}
+        </h2>
+        <p>
+            {% if session.lang == 'km' %}
+                ថ្ងៃចាប់ផ្តើម: {{ booking.start_date }}<br>
+                ថ្ងៃបញ្ចប់: {{ booking.end_date }}<br>
+                តម្លៃសរុប: ${{ booking.total_cost }}<br>
+                ស្ថានភាព: {{ {'Pending': 'រង់ចាំ', 'Confirmed': 'បញ្ជាក់', 'Completed': 'បញ្ចប់', 'Cancelled': 'បោះបង់'}[booking.status] }}
+            {% else %}
+                Start Date: {{ booking.start_date }}<br>
+                End Date: {{ booking.end_date }}<br>
+                Total Cost: ${{ booking.total_cost }}<br>
+                Status: {{ booking.status }}
+            {% endif %}
+        </p>
+        {% if can_cancel %}
+            <form method="POST">
+                <p>{% if session.lang == 'km' %}អ្នកនឹងទទួលបានប្រាក់ត្រឡប់ 80% (${{ (booking.total_cost * 0.8) | round(2) }})។{% else %}You will receive an 80% refund (${{ (booking.total_cost * 0.8) | round(2) }}).{% endif %}</p>
+                <button type="submit" class="btn btn-danger">
+                    {% if session.lang == 'km' %}បញ្ជាក់ការបោះបង់{% else %}Confirm Cancellation{% endif %}
+                </button>
+            </form>
+        {% else %}
+            <p class="text-danger">
+                {% if session.lang == 'km' %}មិនអាចបោះបង់បានទេ ព្រោះនៅសល់តិចជាង 24 ម៉ោង!{% else %}Cannot cancel, less than 24 hours remaining!{% endif %}
+            </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

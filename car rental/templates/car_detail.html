@@ -1,64 +1,57 @@
-{% extends 'base.html' %}
-{% block title %}Car Details - {{ car[1] }} {{ car[2] }}{% endblock %}
-{% block css %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/car_detail.css') }}">
-{% endblock %}
+{% extends "base.html" %}
+{% block title %}{% if session.lang == 'km' %}ព័ត៌មានរថយន្ត{% else %}Car Details{% endif %}{% endblock %}
 {% block content %}
-    <div class="car-detail-container">
-        <h1>{{ car[1] }} {{ car[2] }} <small class="year">({{ car[7]|default('N/A') }})</small></h1>
-        
-        <!-- Car Image -->
-        <div class="car-image">
-            <img src="{% if car[5] %}{{ url_for('static', filename='images/' + car[5]) }}{% else %}{{ url_for('static', filename='images/placeholder.jpg') }}{% endif %}" alt="{{ car[1] }} {{ car[2] }}" class="car-photo">
-        </div>
-
-        <!-- Car Details Section -->
-        <div class="car-info">
-            <h2>Details</h2>
-            <p><strong>Price:</strong> ${{ car[3] }}/day</p>
-            <p><strong>Status:</strong> {{ car[4] }}</p>
-            <p><strong>Fuel Type:</strong> {{ car[8]|default('Unknown') }}</p>
-            <p><strong>Transmission:</strong> {{ car[9]|default('N/A') }}</p>
-            <p><strong>Featured:</strong> {% if car[6] == 1 %}Yes{% else %}No{% endif %}</p>
-        </div>
-
-        <!-- Booking Section -->
-        {% if car[4] == 'Available' and is_logged_in() %}
-            <div class="booking-section">
-                <h2>Book This Car</h2>
-                <form method="POST" action="{{ url_for('book', car_id=car[0]) }}">
-                    <label for="start_date">Start Date:</label>
-                    <input type="date" id="start_date" name="start_date" required>
-                    <label for="end_date">End Date:</label>
-                    <input type="date" id="end_date" name="end_date" required>
-                    <label for="location_pickup">Pickup Location:</label>
-                    <input type="text" id="location_pickup" name="location_pickup" placeholder="e.g., Phnom Penh Branch">
-                    <label for="location_return">Return Location:</label>
-                    <input type="text" id="location_return" name="location_return" placeholder="e.g., Phnom Penh Branch">
-                    <label for="notes">Notes:</label>
-                    <textarea id="notes" name="notes" placeholder="Any special requests"></textarea>
-                    <button type="submit" class="btn-book">Book Now</button>
-                </form>
-            </div>
+<div class="row">
+    <div class="col-md-6">
+        {% if car.image %}
+            <img src="{{ url_for('static', filename='images/' + car.image) }}" class="img-fluid" alt="{{ car.brand }} {{ car.model }}">
         {% else %}
-            <p class="unavailable-message">This car is currently unavailable for booking.</p>
+            <img src="https://via.placeholder.com/400" class="img-fluid" alt="No Image">
         {% endif %}
-
-        <!-- Reviews Section (Placeholder for future functionality) -->
-        <div class="reviews-section">
-            <h2>Customer Reviews</h2>
-            <p>No reviews yet. Be the first to leave a review!</p>
-            {% if is_logged_in() %}
-                <form method="POST" action="{{ url_for('add_review', car_id=car[0]) }}" class="review-form">
-                    <label for="rating">Rating (1-5):</label>
-                    <input type="number" id="rating" name="rating" min="1" max="5" required>
-                    <label for="comment">Comment:</label>
-                    <textarea id="comment" name="comment" placeholder="Share your experience" required></textarea>
-                    <button type="submit" class="btn-submit">Submit Review</button>
-                </form>
+    </div>
+    <div class="col-md-6">
+        <h2>{{ car.brand }} {{ car.model }}</h2>
+        <p>
+            {% if session.lang == 'km' %}
+                តម្លៃ: ${{ car.price_per_day }}/ថ្ងៃ<br>
+                ស្ថានភាព: {{ {'Available': 'អាចជួលបាន', 'Rented': 'បានជួល', 'Maintenance': 'កំពុងជួសជុល'}[car.status] }}<br>
+                ឆ្នាំ: {{ car.year or 'មិនបានបញ្ជាក់' }}<br>
+                ប្រភេទប្រេង: {{ car.fuel_type or 'មិនបានបញ្ជាក់' }}<br>
+                ប្រភេទប្រអប់លេខ: {{ car.transmission or 'មិនបានបញ្ជាក់' }}<br>
+                {% if car.discount_percentage > 0 %}
+                    បញ្ចុះតម្លៃ: {{ car.discount_percentage }}%
+                {% endif %}
             {% else %}
-                <p>Please <a href="{{ url_for('login') }}">log in</a> to leave a review.</p>
+                Price: ${{ car.price_per_day }}/day<br>
+                Status: {{ car.status }}<br>
+                Year: {{ car.year or 'Not specified' }}<br>
+                Fuel Type: {{ car.fuel_type or 'Not specified' }}<br>
+                Transmission: {{ car.transmission or 'Not specified' }}<br>
+                {% if car.discount_percentage > 0 %}
+                    Discount: {{ car.discount_percentage }}%
+                {% endif %}
             {% endif %}
+        </p>
+        {% if car.status == 'Available' and is_logged_in() %}
+            <a href="{{ url_for('book', car_id=car.id) }}" class="btn btn-primary">
+                {% if session.lang == 'km' %}កក់ឥឡូវ{% else %}Book Now{% endif %}
+            </a>
+        {% endif %}
+        <a href="{{ url_for('review', car_id=car.id) }}" class="btn btn-secondary">
+            {% if session.lang == 'km' %}បញ្ចេញមតិ{% else %}Write Review{% endif %}
+        </a>
+    </div>
+</div>
+<h3 class="mt-4">{% if session.lang == 'km' %}មតិយោបល់{% else %}Reviews{% endif %}</h3>
+{% for review in reviews %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <p><strong>{{ review.username }}</strong>: {{ '⭐' * review.rating }} ({{ review.rating }}/5)</p>
+            <p>{{ review.comment or 'No comment' }}</p>
+            <p><small>{{ review.review_date }}</small></p>
         </div>
     </div>
+{% else %}
+    <p>{% if session.lang == 'km' %}មិនមានមតិយោបល់{% else %}No reviews yet{% endif %}</p>
+{% endfor %}
 {% endblock %}

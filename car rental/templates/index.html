@@ -1,192 +1,69 @@
-{% extends 'base.html' %}
-{% block title %}Home - Available Cars{% endblock %}
-{% block css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
-{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}{% if session.lang == 'km' %}ទំព័រដើម{% else %}Home{% endif %}{% endblock %}
 {% block content %}
-<h1>Available Cars</h1>
-
-<!-- Filter Count Badge -->
-{% set active_filters = [] %}
-{% if brand %}{{ active_filters.append('brand') }}{% endif %}
-{% if model %}{{ active_filters.append('model') }}{% endif %}
-{% if min_price|default(0) > 0 or max_price|default(200) < 200 %}{{ active_filters.append('price') }}{% endif %}
-{% if status %}{{ active_filters.append('status') }}{% endif %}
-{% if min_year or max_year %}{{ active_filters.append('year') }}{% endif %}
-{% if fuel_type %}{{ active_filters.append('fuel') }}{% endif %}
-{% if transmission %}{{ active_filters.append('trans') }}{% endif %}
-{% if only_available %}{{ active_filters.append('available') }}{% endif %}
-
-{% if active_filters %}
-  <div class="filter-badge">
-    <span class="badge-count">{{ active_filters|length }}</span> active filter{{ '' if active_filters|length == 1 else 's' }}
-    <a href="{{ url_for('index') }}" class="clear-all">Clear all</a>
-  </div>
-{% endif %}
-
-<!-- Filter and Sort Form -->
-<form method="GET" action="{{ url_for('index') }}" class="filter-sort-form" aria-label="Car filters and sorting">
-    <div class="filter-sort-container">
-
-        <!-- Text Filters -->
-        <div class="filter-group">
-            <label for="brand">Brand:</label>
-            <input type="text" id="brand" name="brand" value="{{ brand }}" placeholder="e.g., Toyota" aria-label="Filter by brand">
+<h2 class="text-center mb-4">{% if session.lang == 'km' %}រថយន្តសម្រាប់ជួល{% else %}Available Cars{% endif %}</h2>
+<form method="GET" class="mb-4">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <input type="text" name="brand" class="form-control" placeholder="{% if session.lang == 'km' %}ម៉ាក{% else %}Brand{% endif %}" value="{{ brand }}">
         </div>
-
-        <div class="filter-group">
-            <label for="model">Model:</label>
-            <input type="text" id="model" name="model" value="{{ model }}" placeholder="e.g., Camry" aria-label="Filter by model">
+        <div class="col-md-3">
+            <input type="text" name="model" class="form-control" placeholder="{% if session.lang == 'km' %}ម៉ូដែល{% else %}Model{% endif %}" value="{{ model }}">
         </div>
-
-        <!-- Price Range (with Range Sliders) -->
-        <div class="filter-group price-range-group">
-            <label>Price ($/day):</label>
-            <div class="range-container">
-                <input type="range" name="min_price" min="0" max="200" step="5"
-                       value="{{ min_price|default(0) }}" class="price-slider" id="min_price_slider"
-                       aria-label="Minimum price">
-                <input type="range" name="max_price" min="0" max="200" step="5"
-                       value="{{ max_price|default(200) }}" class="price-slider" id="max_price_slider"
-                       aria-label="Maximum price">
-                <div class="price-values">
-                    <span>$<span id="min_price_val">{{ min_price|default(0) }}</span></span> —
-                    <span>$<span id="max_price_val">{{ max_price|default(200) }}</span></span>
-                </div>
-            </div>
+        <div class="col-md-2">
+            <input type="number" name="max_price" class="form-control" placeholder="{% if session.lang == 'km' %}តម្លៃអតិបរមា{% else %}Max Price{% endif %}" value="{{ max_price }}">
         </div>
-
-        <!-- Year Range -->
-        <div class="filter-group">
-            <label>Year Range:</label>
-            <div class="year-range">
-                <input type="number" name="min_year" min="2000" max="2025" placeholder="From"
-                       value="{{ min_year }}" aria-label="Minimum year">
-                <input type="number" name="max_year" min="2000" max="2025" placeholder="To"
-                       value="{{ max_year }}" aria-label="Maximum year">
-            </div>
-        </div>
-
-        <!-- Status Filter -->
-        <div class="filter-group">
-            <label for="status">Status:</label>
-            <select id="status" name="status" aria-label="Filter by rental status">
-                <option value="" {% if not status %}selected{% endif %}>All</option>
-                <option value="Available" {% if status == 'Available' %}selected{% endif %}>Available</option>
-                <option value="Rented" {% if status == 'Rented' %}selected{% endif %}>Rented</option>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">{% if session.lang == 'km' %}ស្ថានភាពទាំងអស់{% else %}All Status{% endif %}</option>
+                <option value="Available" {% if status == 'Available' %}selected{% endif %}>{% if session.lang == 'km' %}អាចជួលបាន{% else %}Available{% endif %}</option>
+                <option value="Rented" {% if status == 'Rented' %}selected{% endif %}>{% if session.lang == 'km' %}បានជួល{% else %}Rented{% endif %}</option>
+                <option value="Maintenance" {% if status == 'Maintenance' %}selected{% endif %}>{% if session.lang == 'km' %}កំពុងជួសជុល{% else %}Maintenance{% endif %}</option>
             </select>
         </div>
-
-        <!-- Only Available Toggle -->
-        <div class="filter-group checkbox-group">
-            <label>
-                <input type="checkbox" name="only_available" value="1" {% if only_available %}checked{% endif %}>
-                Show only available
-            </label>
-        </div>
-
-        <!-- Fuel Type -->
-        <div class="filter-group">
-            <label for="fuel_type">Fuel:</label>
-            <select id="fuel_type" name="fuel_type" aria-label="Filter by fuel type">
-                <option value="">All</option>
-                <option value="Petrol" {% if fuel_type == 'Petrol' %}selected{% endif %}>Petrol</option>
-                <option value="Diesel" {% if fuel_type == 'Diesel' %}selected{% endif %}>Diesel</option>
-                <option value="Electric" {% if fuel_type == 'Electric' %}selected{% endif %}>Electric</option>
-                <option value="Hybrid" {% if fuel_type == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+        <div class="col-md-2">
+            <select name="sort" class="form-select">
+                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>{% if session.lang == 'km' %}តម្លៃទាបទៅខ្ពស់{% else %}Price: Low to High{% endif %}</option>
+                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>{% if session.lang == 'km' %}តម្លៃខ្ពស់ទៅទាប{% else %}Price: High to Low{% endif %}</option>
+                <option value="brand_asc" {% if sort == 'brand_asc' %}selected{% endif %}>{% if session.lang == 'km' %}ម៉ាក A-Z{% else %}Brand A-Z{% endif %}</option>
+                <option value="year_desc" {% if sort == 'year_desc' %}selected{% endif %}>{% if session.lang == 'km' %}ឆ្នាំថ្មីបំផុត{% else %}Newest Year{% endif %}</option>
             </select>
-        </div>
-
-        <!-- Transmission -->
-        <div class="filter-group">
-            <label for="transmission">Transmission:</label>
-            <select id="transmission" name="transmission" aria-label="Filter by transmission">
-                <option value="">All</option>
-                <option value="Automatic" {% if transmission == 'Automatic' %}selected{% endif %}>Automatic</option>
-                <option value="Manual" {% if transmission == 'Manual' %}selected{% endif %}>Manual</option>
-            </select>
-        </div>
-
-        <!-- Sort By -->
-        <div class="sort-group">
-            <label for="sort">Sort By:</label>
-            <select id="sort" name="sort">
-                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
-                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
-                <option value="brand_asc" {% if sort == 'brand_asc' %}selected{% endif %}>Brand: A to Z</option>
-                <option value="brand_desc" {% if sort == 'brand_desc' %}selected{% endif %}>Brand: Z to A</option>
-                <option value="year_desc" {% if sort == 'year_desc' %}selected{% endif %}>Year: Newest First</option>
-            </select>
-        </div>
-
-        <!-- View Mode Toggle (Grid / List) -->
-        <div class="view-mode-group">
-            <label>View:</label>
-            <div class="view-toggle">
-                <input type="radio" name="view" value="grid" id="view_grid" checked>
-                <label for="view_grid" class="view-btn">Grid</label>
-                <input type="radio" name="view" value="list" id="view_list" {% if view == 'list' %}checked{% endif %}>
-                <label for="view_list" class="view-btn">List</label>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="filter-buttons">
-            <button type="submit" class="btn-apply">Apply Filters</button>
-            <a href="{{ url_for('index') }}" class="btn-reset">Reset</a>
         </div>
     </div>
+    <button type="submit" class="btn btn-primary mt-3">{% if session.lang == 'km' %}ស្វែងរក{% else %}Search{% endif %}</button>
 </form>
-
-<!-- Car Display -->
-<div class="car-container {% if view == 'list' %}list-view{% else %}grid-view{% endif %}">
+<div class="row">
     {% for car in cars %}
-    <article class="car-card" itemscope itemtype="http://schema.org/Car">
-        <!-- Featured Badge -->
-        {% if car[6] == 1 %}
-        <span class="badge-featured">Featured</span>
-        {% endif %}
-
-        <div class="car-image">
-            {% if car[5] %}
-            <img src="{{ url_for('static', filename='images/' + car[5]) }}"
-                 alt="{{ car[1] }} {{ car[2] }} {{ car[7]|default('') }}"
-                 class="car-photo" loading="lazy">
-            {% else %}
-            <div class="image-placeholder">
-                <div class="shimmer"></div>
-                <span>No Image</span>
-            </div>
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            {% if car.image %}
+            <img src="{{ url_for('static', filename='images/' + car.image) }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}">
             {% endif %}
-        </div>
-
-        <div class="car-info">
-            <h3 itemprop="name">{{ car[1] }} {{ car[2] }} <small class="year">({{ car[7]|default('N/A') }})</small></h3>
-            <p class="price" itemprop="price">$<strong>{{ car[3] }}</strong>/day</p>
-            <p class="status status-{{ car[4]|lower }}" itemprop="availability">
-                {{ car[4] }}
-            </p>
-            <p class="meta">
-                <span>{{ car[8]|default('Unknown') }} • {{ car[9]|default('N/A') }}</span>
-            </p>
-
-            <div class="car-actions">
-                <a href="{{ url_for('car_detail', car_id=car[0]) }}" class="btn btn-view">View Details</a>
-                {% if car[4] == 'Available' and is_logged_in() %}
-                <a href="{{ url_for('book', car_id=car[0]) }}" class="btn btn-book">Book Now</a>
-                {% else %}
-                <button class="btn btn-disabled" disabled>Unavailable</button>
-                {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ car.brand }} {{ car.model }}</h5>
+                <p class="card-text">
+                    {% if session.lang == 'km' %}
+                        តម្លៃ: ${{ car.price_per_day }}/ថ្ងៃ<br>
+                        ស្ថានភាព: {{ {'Available': 'អាចជួលបាន', 'Rented': 'បានជួល', 'Maintenance': 'កំពុងជួសជុល'}[car.status] }}<br>
+                        {% if car.discount_percentage > 0 %}
+                            បញ្ចុះតម្លៃ: {{ car.discount_percentage }}%
+                        {% endif %}
+                    {% else %}
+                        Price: ${{ car.price_per_day }}/day<br>
+                        Status: {{ car.status }}<br>
+                        {% if car.discount_percentage > 0 %}
+                            Discount: {{ car.discount_percentage }}%
+                        {% endif %}
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('car_detail', car_id=car.id) }}" class="btn btn-primary">
+                    {% if session.lang == 'km' %}មើលលម្អិត{% else %}View Details{% endif %}
+                </a>
             </div>
         </div>
-    </article>
+    </div>
+    {% else %}
+    <p class="text-center">{% if session.lang == 'km' %}មិនមានរថយន្ត{% else %}No cars found{% endif %}</p>
     {% endfor %}
-
-    {% if not cars %}
-    <p class="no-results" role="alert">
-        <strong>No cars found.</strong> Try adjusting your filters.
-    </p>
-    {% endif %}
 </div>
 {% endblock %}

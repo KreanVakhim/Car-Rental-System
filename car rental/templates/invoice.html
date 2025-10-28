@@ -1,13 +1,115 @@
-{% extends 'base.html' %}
-{% block title %}Invoice{% endblock %}
-{% block css %}
+{% extends "base.html" %}
+{% block title %}វិក្កយបត្រ #{{ invoice.id }}{% endblock %}
+
+{% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/invoice.css') }}">
 {% endblock %}
+
 {% block content %}
-    <h1>Invoice</h1>
-    <p>Invoice ID: {{ invoice[0] }}</p>
-    <p>Car: {{ invoice[4] }} {{ invoice[5] }}</p>
-    <p>Amount: ${{ invoice[1] }}</p>
-    <p>Penalty: ${{ invoice[2] }}</p>
-    <p>Issue Date: {{ invoice[3] }}</p>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <!-- Print Button -->
+            <div class="text-end mb-3">
+                <button onclick="window.print()" class="btn btn-outline-secondary print-btn">
+                    <i class="fas fa-print me-2"></i> បោះពុម្ព
+                </button>
+            </div>
+
+            <!-- Invoice Card -->
+            <div class="invoice-card">
+                <div class="card-body p-5">
+                    <!-- Header -->
+                    <div class="invoice-header text-center mb-5">
+                        <h1 class="fw-bold text-primary">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+                            វិក្កយបត្រ
+                        </h1>
+                        <p class="text-muted">Invoice ID: <strong>#{{ "%04d"|format(invoice.id) }}</strong></p>
+                    </div>
+
+                    <!-- Company Info -->
+                    <div class="company-info text-start mb-4">
+                        <h5 class="fw-bold text-success">
+                            <i class="fas fa-building me-2"></i> Car Rental System
+                        </h5>
+                        <p class="small text-muted mb-1">123 Phnom Penh, Cambodia</p>
+                        <p class="small text-muted mb-1">Phone: 012 345 678</p>
+                        <p class="small text-muted mb-0">Email: invoice@carrental.com</p>
+                    </div>
+
+                    <hr class="invoice-divider">
+
+                    <!-- Customer & Car Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-info">
+                                <i class="fas fa-user me-2"></i> អតិថិជន
+                            </h6>
+                            <p class="mb-1"><strong>{{ invoice.username }}</strong></p>
+                            <p class="small text-muted">{{ invoice.email or 'N/A' }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h6 class="fw-bold text-info">
+                                <i class="fas fa-car me-2"></i> ព័ត៌មានរថយន្ត
+                            </h6>
+                            <p class="mb-1"><strong>{{ invoice.brand }} {{ invoice.model }}</strong></p>
+                            <p class="small text-muted">
+                                {{ invoice.start_date }} → {{ invoice.end_date }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Details -->
+                    <div class="invoice-details p-4 rounded mb-4">
+                        <div class="row text-center fw-bold">
+                            <div class="col-4">
+                                <div class="detail-item">
+                                    <p class="text-muted small mb-1">តម្លៃជួល</p>
+                                    <p class="amount text-success">${{ "%.2f"|format(invoice.amount) }}</p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="detail-item">
+                                    <p class="text-muted small mb-1">ពិន័យ</p>
+                                    <p class="amount text-warning">${{ "%.2f"|format(invoice.penalty|default(0)) }}</p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="detail-item border-start border-success">
+                                    <p class="text-muted small mb-1">សរុប</p>
+                                    <p class="total-amount text-primary fs-4">
+                                        ${{ "%.2f"|format(invoice.amount + (invoice.penalty|default(0))) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Issued Date -->
+                    <div class="text-center text-muted small">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        ចេញនៅថ្ងៃ: {{ invoice.issue_date }}
+                    </div>
+
+                    <!-- QR Code (Optional) -->
+                    {% if invoice.qr_code %}
+                    <div class="text-center mt-4">
+                        <img src="{{ url_for('static', filename='qr/' ~ invoice.qr_code) }}" 
+                             class="qr-code" alt="QR Code">
+                        <p class="small text-muted mt-2">ស្កេន QR ដើម្បីទាញយក</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Footer -->
+                    <div class="invoice-footer text-center mt-5 pt-4 border-top">
+                        <p class="small text-muted">
+                            អរគុណសម្រាប់ការប្រើប្រាស់សេវារបស់យើង។
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,25 +1,159 @@
-{% extends 'base.html' %}
-{% block title %}Edit Car{% endblock %}
-{% block css %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/add_car.css') }}">
+{% extends "base.html" %}
+{% block title %}កែរថយន្ត - {{ car.brand }} {{ car.model }}{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_car.css') }}">
 {% endblock %}
+
 {% block content %}
-    <h1>Edit Car</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <label for="brand">Brand:</label>
-        <input type="text" id="brand" name="brand" value="{{ car[1] }}" required>
-        <label for="model">Model:</label>
-        <input type="text" id="model" name="model" value="{{ car[2] }}" required>
-        <label for="price_per_day">Price per Day ($):</label>
-        <input type="number" id="price_per_day" name="price_per_day" value="{{ car[3] }}" step="0.01" min="0" required>
-        <label for="status">Status:</label>
-        <select id="status" name="status" required>
-            <option value="Available" {% if car[4] == 'Available' %}selected{% endif %}>Available</option>
-            <option value="Rented" {% if car[4] == 'Rented' %}selected{% endif %}>Rented</option>
-        </select>
-        <label for="image">Car Image (JPG/PNG):</label>
-        <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png">
-        <p>Current Image: {% if car[5] %}{{ car[5] }}{% else %}None{% endif %}</p>
-        <button type="submit">Update Car</button>
-    </form>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <!-- Header -->
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-edit text-warning me-2 fs-3"></i>
+                <h1 class="mb-0 fw-bold">កែប្រែរថយន្ត</h1>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Edit Form Card -->
+            <div class="edit-car-card">
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" class="edit-car-form">
+                        <div class="row g-3">
+                            <!-- Brand & Model -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-tag text-primary me-1"></i> ម៉ាករថយន្ត
+                                </label>
+                                <input type="text" 
+                                       name="brand" 
+                                       class="form-control form-control-lg" 
+                                       value="{{ car.brand }}" 
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-car text-primary me-1"></i> ម៉ូដែល
+                                </label>
+                                <input type="text" 
+                                       name="model" 
+                                       class="form-control form-control-lg" 
+                                       value="{{ car.model }}" 
+                                       required>
+                            </div>
+
+                            <!-- Price & Status -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-dollar-sign text-success me-1"></i> តម្លៃក្នុងមួយថ្ងៃ ($)
+                                </label>
+                                <input type="number" 
+                                       name="price_per_day" 
+                                       step="0.01" 
+                                       min="0" 
+                                       class="form-control form-control-lg" 
+                                       value="{{ car.price_per_day }}" 
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-info-circle text-info me-1"></i> ស្ថានភាព
+                                </label>
+                                <select name="status" class="form-select form-control-lg">
+                                    <option value="Available" {% if car.status == 'Available' %}selected{% endif %}>
+                                        មានស្តុក
+                                    </option>
+                                    <option value="Rented" {% if car.status == 'Rented' %}selected{% endif %}>
+                                        កំពុងជួល
+                                    </option>
+                                    <option value="Maintenance" {% if car.status == 'Maintenance' %}selected{% endif %}>
+                                        ជួសជុល
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Current Image -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-image text-secondary me-1"></i> រូបភាពបច្ចុប្បន្ន
+                                </label>
+                                <div class="current-image-preview">
+                                    {% if car.image %}
+                                        <img src="{{ url_for('static', filename='images/' ~ car.image) }}" 
+                                             class="current-img rounded shadow" 
+                                             alt="Current car image">
+                                        <div class="mt-2">
+                                            <small class="text-muted">{{ car.image }}</small>
+                                        </div>
+                                    {% else %}
+                                        <div class="no-image-placeholder">
+                                            <i class="fas fa-car-side"></i>
+                                            <p class="mt-2 text-muted">គ្មានរូបភាព</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- New Image Upload -->
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-upload text-success me-1"></i> ជ្រើសរូបភាពថ្មី
+                                </label>
+                                <input type="file" 
+                                       name="image" 
+                                       class="form-control form-control-lg file-input" 
+                                       accept=".jpg,.jpeg,.png">
+                                <div class="form-text text-muted">
+                                    ទំហំណែនាំ: 800×600px, JPG/PNG
+                                </div>
+                            </div>
+
+                            <!-- Delete Image Checkbox -->
+                            {% if car.image %}
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           name="delete_image" 
+                                           class="form-check-input" 
+                                           id="delete_image">
+                                    <label class="form-check-label text-danger" for="delete_image">
+                                        <i class="fas fa-trash-alt me-1"></i>
+                                        លុបរូបភាពចាស់
+                                    </label>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12 text-center mt-4">
+                                <button type="submit" 
+                                        class="btn btn-warning btn-lg update-btn">
+                                    <i class="fas fa-save me-2"></i>
+                                    រក្សាទុកការកែប្រែ
+                                </button>
+                                <a href="{{ url_for('admin_dashboard') }}" 
+                                   class="btn btn-outline-secondary btn-lg ms-2">
+                                    <i class="fas fa-times me-2"></i>
+                                    បោះបង់
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

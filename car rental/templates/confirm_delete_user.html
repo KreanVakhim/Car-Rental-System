@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}
+    {% if session.lang == 'km' %}បញ្ជាក់ការលុបអ្នកប្រើ - ប្រព័ន្ធជួលរថយន្ត{% else %}Confirm Delete User - Car Rental{% endif %}
+{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-danger">
+                            {% if session.lang == 'km' %}បញ្ជាក់ការលុបអ្នកប្រើ{% else %}Confirm Delete User{% endif %}
+                        </h2>
+                        <p class="text-muted">
+                            {% if session.lang == 'km' %}
+                                តើអ្នកប្រាកដជាចង់លុបអ្នកប្រើ <strong>{{ user.username }}</strong> ({{ {'admin': 'អ្នកគ្រប់គ្រង', 'staff': 'បុគ្គលិក', 'customer': 'អតិថិជន'}[user.role] }})?
+                            {% else %}
+                                Are you sure you want to delete user <strong>{{ user.username }}</strong> ({{ user.role|capitalize }})?
+                            {% endif %}
+                        </p>
+                    </div>
+                    <form method="POST">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-trash me-2"></i>
+                                {% if session.lang == 'km' %}លុបអ្នកប្រើ{% else %}Delete User{% endif %}
+                            </button>
+                            <a href="{{ url_for('manage_users') }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                {% if session.lang == 'km' %}បោះបង់{% else %}Cancel{% endif %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
