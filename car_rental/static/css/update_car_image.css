@@ -1,0 +1,5 @@
+/* update_car_image.css — small helper styles for image upload page */
+@import url("base.css");
+
+.update-image{max-width:700px;margin:20px auto;padding:12px}
+.update-image input[type=file]{display:block}

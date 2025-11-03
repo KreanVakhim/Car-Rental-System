@@ -1,0 +1,5 @@
+/* manage_users.css — placeholder for admin manage users page */
+@import url("base.css");
+
+.manage-users{padding:18px;max-width:1200px;margin:12px auto}
+.manage-users .user-row{display:flex;align-items:center;justify-content:space-between;padding:10px;background:#fff;border-radius:6px;margin-bottom:8px}

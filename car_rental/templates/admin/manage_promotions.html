@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Manage Promotions{% endblock %}
+{% block content %}
+<h2>Promotions</h2>
+<a href="{{ url_for('add_promo') }}" class="btn btn-success mb-3">Add New Promo</a>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Discount %</th>
+            <th>Valid From</th>
+            <th>Valid To</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in promotions %}
+        <tr>
+            <td><strong>{{ p.code }}</strong></td>
+            <td>{{ p.discount_pct }}%</td>
+            <td>{{ p.valid_from }}</td>
+            <td>{{ p.valid_to }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

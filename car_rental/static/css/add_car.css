@@ -1,0 +1,11 @@
+/* add_car.css — styles for admin Add Car page */
+@import url("base.css");
+
+.add-car-form{
+  max-width:900px;
+  margin:24px auto;
+  padding:16px;
+}
+
+.add-car-form h2{font-size:1.25rem;margin-bottom:12px}
+.add-car-form input, .add-car-form button{display:block;width:100%;margin:8px 0;padding:8px}

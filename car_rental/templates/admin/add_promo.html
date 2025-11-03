@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Add Promotion{% endblock %}
+{% block content %}
+<h2>Add New Promotion</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label>Promo Code</label>
+        <input type="text" name="code" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Discount (%)</label>
+        <input type="number" name="discount_pct" min="1" max="100" class="form-control" required>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label>Valid From</label>
+            <input type="date" name="valid_from" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label>Valid To</label>
+            <input type="date" name="valid_to" class="form-control" required>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Add Promo</button>
+</form>
+{% endblock %}

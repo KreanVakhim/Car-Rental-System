@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Report Damage{% endblock %}
+
+{% block extra_css %}
+<style>
+    .damage-form {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        background: #fff;
+    }
+    .car-preview {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .car-preview img {
+        max-height: 180px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .btn-submit {
+        background: #dc3545;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+    }
+    .btn-submit:hover {
+        background: #c82333;
+    }
+    .preview-img {
+        max-height: 150px;
+        margin-top: 10px;
+        border-radius: 8px;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="damage-form">
+        <h2 class="text-center mb-4">
+            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+            Report Damage
+        </h2>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }} alert-dismissible fade show">
+                        {{ msg }}
+                        <button class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Car Info -->
+        <div class="car-preview">
+            {% if car.image %}
+                <img src="{{ url_for('uploaded_file', filename=car.image) }}" alt="{{ car.brand }} {{ car.model }}">
+            {% else %}
+                <div class="bg-light border rounded d-flex align-items-center justify-content-center" style="height:180px;">
+                    <span class="text-muted">No Image</span>
+                </div>
+            {% endif %}
+            <h5 class="mt-2">{{ car.brand }} {{ car.model }} ({{ car.year }})</h5>
+            <p class="text-muted">ID: #{{ car.id }} • {{ car.seats }} seats • ${{ car.price_day }}/day</p>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" enctype="multipart/form-data" id="damageForm">
+            <div class="mb-3">
+                <label for="description" class="form-label fw-bold">
+                    Damage Description <span class="text-danger">*</span>
+                </label>
+                <textarea 
+                    class="form-control" 
+                    id="description" 
+                    name="description" 
+                    rows="5" 
+                    placeholder="Describe the damage in detail (e.g., scratch on left door, dent on bumper...)" 
+                    required
+                ></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="image" class="form-label fw-bold">Photo Evidence (Optional)</label>
+                <input 
+                    type="file" 
+                    class="form-control" 
+                    id="image" 
+                    name="image" 
+                    accept="image/*"
+                    onchange="previewImage(this)"
+                >
+                <img id="imgPreview" class="preview-img img-fluid" alt="Preview">
+                <small class="text-muted">Supported: PNG, JPG, JPEG, GIF</small>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('staff_dashboard') }}" class="btn btn-secondary me-md-2">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-submit text-white">
+                    Submit Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('imgPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+<!-- templates/sitemap.html -->
+{% extends "base.html" %}
+{% block title %}Sitemap{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Site Map</h2>
+    <ul class="list-group">
+        <li class="list-group-item"><a href="{{ url_for('index') }}">Home</a></li>
+        <li class="list-group-item"><a href="{{ url_for('cars_list') }}">Cars</a></li>
+        <li class="list-group-item"><a href="{{ url_for('promotions') }}">Promotions</a></li>
+        <li class="list-group-item"><a href="{{ url_for('login') }}">Login</a></li>
+        <li class="list-group-item"><a href="{{ url_for('register') }}">Register</a></li>
+        <li class="list-group-item"><a href="{{ url_for('privacy_policy') }}">Privacy Policy</a></li>
+        <li class="list-group-item"><a href="{{ url_for('terms') }}">Terms</a></li>
+
+        <!-- Admin Links -->
+        {% if session.role == 'admin' %}
+        <li class="list-group-item"><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+        <li class="list-group-item"><a href="{{ url_for('manage_cars') }}">Manage Cars</a></li>
+        <li class="list-group-item"><a href="{{ url_for('manage_promotions') }}">Manage Promotions</a></li>
+        <li class="list-group-item"><a href="{{ url_for('manage_users') }}">Manage Users</a></li>
+        <li class="list-group-item"><a href="{{ url_for('manage_bookings') }}">Manage Bookings</a></li>
+        <li class="list-group-item"><a href="{{ url_for('damage_reports') }}">Damage Reports</a></li>
+        {% endif %}
+
+        <!-- Staff Links -->
+        {% if session.role == 'staff' %}
+        <li class="list-group-item"><a href="{{ url_for('staff_dashboard') }}">Staff Dashboard</a></li>
+        <li class="list-group-item"><a href="{{ url_for('rental_history') }}">Rental History</a></li>
+        {% endif %}
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Car Rental{% endblock %}
+{% set css_file = 'auth.css' %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Welcome Back</h1>
+            <p>Sign in to your account</p>
+        </div>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Login</button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="{{ url_for('register') }}">Sign up</a></p>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <h4 style="margin-bottom: 15px; font-size: 1rem;">Demo Accounts:</h4>
+            <div style="font-size: 0.9rem;">
+                <div><strong>Admin:</strong> admin@carrental.com / admin123</div>
+                <div><strong>Staff:</strong> staff@carrental.com / staff123</div>
+                <div><strong>Customer:</strong> sokha@test.com / cust123</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

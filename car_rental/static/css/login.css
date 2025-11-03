@@ -1,0 +1,4 @@
+/* login.css */
+.form-container { background: rgba(255,255,255,0.95); padding: 3rem; border-radius: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.form-container h2 { text-align: center; margin-bottom: 2rem; color: #007BFF; }
+.demo { background: #F8F9FA; padding: 1rem; border-radius: 10px; margin-top: 1rem; text-align: center; }

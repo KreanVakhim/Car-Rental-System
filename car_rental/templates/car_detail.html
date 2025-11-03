@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Book {{ car.brand }} {{ car.model }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <img src="{{ url_for('uploaded_file', filename=car.image) }}" class="img-fluid rounded" alt="{{ car.brand }} {{ car.model }}">
+        </div>
+        <div class="col-md-6">
+            <h2>{{ car.brand }} {{ car.model }} ({{ car.year }})</h2>
+            <p class="lead">${{ car.price_day }}/day • {{ car.seats }} seats</p>
+
+            <form method="POST" action="{{ url_for('book_car', cid=car.id) }}">
+                <div class="mb-3">
+                    <label>Start Date</label>
+                    <input type="date" name="start_date" class="form-control" min="{{ min_date }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>End Date</label>
+                    <input type="date" name="end_date" class="form-control" min="{{ min_date }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>Promo Code (Optional)</label>
+                    <input type="text" name="promo_code" class="form-control" placeholder="WELCOME20">
+                </div>
+                <button type="submit" class="btn btn-success btn-lg">Book Now</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

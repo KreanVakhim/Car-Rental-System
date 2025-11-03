@@ -1,0 +1,2 @@
+.today-tasks { display: grid; gap: 1rem; }
+.task { background: linear-gradient(45deg, #28A745, #51CF66); color: white; padding: 2rem; border-radius: 20px; }

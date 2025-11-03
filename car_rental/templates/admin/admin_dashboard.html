@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h2">Admin Dashboard</h1>
+            <p class="text-muted">Complete control over users, cars, and bookings</p>
+        </div>
+        <div class="col-auto">
+            <a href="/admin/manage_cars" class="btn btn-primary me-2">Manage Cars</a>
+            <a href="/admin/manage_users" class="btn btn-outline-primary me-2">Manage Users</a>
+            <a href="/admin/manage_promotions" class="btn btn-outline-primary">Promotions</a>
+        </div>
+    </div>
+
+    <!-- STATS CARDS -->
+    <div class="row g-3 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <h4 class="display-6">{{ users_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Cars</h5>
+                    <h4 class="display-6">{{ cars_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Bookings</h5>
+                    <h4 class="display-6">{{ bookings_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Revenue</h5>
+                    <h4 class="display-6">${{ "%.2f"|format(revenue) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="row g-3 mb-5">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-car fa-3x text-primary mb-3"></i>
+                    <h5>Manage Cars</h5>
+                    <p class="text-muted">Add, edit, delete cars</p>
+                    <a href="/admin/manage_cars" class="btn btn-outline-primary">Go</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-success mb-3"></i>
+                    <h5>Manage Users</h5>
+                    <p class="text-muted">Add, edit, delete users</p>
+                    <a href="/admin/manage_users" class="btn btn-outline-primary">Go</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-tags fa-3x text-warning mb-3"></i>
+                    <h5>Promotions</h5>
+                    <p class="text-muted">Create promo codes</p>
+                    <a href="/admin/manage_promotions" class="btn btn-outline-primary">Go</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-3x text-info mb-3"></i>
+                    <h5>Bookings</h5>
+                    <p class="text-muted">View all bookings</p>
+                    <a href="/admin/manage_bookings" class="btn btn-outline-primary">Go</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECENT BOOKINGS -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Recent Bookings</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Car</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in recent_bookings %}
+                        <tr>
+                            <td>{{ b.id }}</td>
+                            <td>{{ b.name }}</td>
+                            <td>{{ b.brand }} {{ b.model }}</td>
+                            <td>{{ b.start_date }}</td>
+                            <td>{{ b.end_date }}</td>
+                            <td>${{ "%.2f"|format(b.total) }}</td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    'success' if b.status == 'completed' else 
+                                    'primary' if b.status == 'active' else 
+                                    'warning' if b.status in ('pending', 'confirmed') else 
+                                    'danger' 
+                                }}">
+                                    {{ b.status|title }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

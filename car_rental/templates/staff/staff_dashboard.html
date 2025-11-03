@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="bi bi-speedometer2"></i> Staff Dashboard</h2>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mt-3">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5>Pending Check-Ins</h5>
+                    <h3>{{ pending_checkins }}</h3>
+                    <a href="{{ url_for('rental_history') }}" class="text-white small">View →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5>Active Rentals</h5>
+                    <h3>{{ active_rentals }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5>Damage Reports</h5>
+                    <h3>{{ damage_count }}</h3>
+                    <a href="{{ url_for('my_damage_reports') }}" class="text-white small">My Reports →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5>Today's Returns</h5>
+                    <h3>{{ today_returns }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">Recent Check-Ins</div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for b in recent_checkins %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>#{{ b.id }} – {{ b.customer_name }}</span>
+                            <small class="text-muted">{{ b.start_date }}</small>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-center text-muted">None</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">Cars Needing Maintenance</div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for c in damaged_cars %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>{{ c.brand }} {{ c.model }}</span>
+                            <span class="badge bg-danger">Damaged</span>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-center text-muted">All good!</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

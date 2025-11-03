@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}All Cars{% endblock %}
+{% block content %}
+<h2>Available Cars</h2>
+<div class="row">
+    {% for car in cars %}
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            {% if car.image %}
+    <img src="{{ url_for('uploaded_file', filename=car.image) }}" class="card-img-top" style="height:150px; object-fit:cover;" alt="{{ car.brand }} {{ car.model }}">
+{% else %}
+    <span class="text-danger">No image uploaded</span>
+{% endif %}
+            <div class="card-body">
+                <h6>{{ car.brand }} {{ car.model }}</h6>
+                <p class="small mb-1">${{ car.price_day }}/day</p>
+                <a href="{{ url_for('book_car', cid=car.id) }}" class="btn btn-sm btn-success">Book Now</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

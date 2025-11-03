@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice - Car Rental{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 0;">
+    <div style="max-width: 800px; margin: 0 auto;">
+        <div class="form-section">
+            <!-- Invoice Header -->
+            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #667eea; padding-bottom: 20px;">
+                <div>
+                    <h1 style="color: #667eea; margin: 0;">INVOICE</h1>
+                    <p style="color: #666; margin: 5px 0 0 0;">Booking #{{ booking.id }}</p>
+                </div>
+                <div style="text-align: right;">
+                    <h3 style="margin: 0;">CarRental</h3>
+                    <p style="margin: 5px 0 0 0; color: #666;">Invoice Date: {{ today }}</p>
+                </div>
+            </div>
+
+            <!-- Company & Customer Info -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                <div>
+                    <h4>From:</h4>
+                    <p>
+                        <strong>CarRental Company</strong><br>
+                        123 Street Name<br>
+                        Phnom Penh, Cambodia<br>
+                        Email: info@carrental.com<br>
+                        Phone: +855 12 345 678
+                    </p>
+                </div>
+                <div>
+                    <h4>To:</h4>
+                    <p>
+                        <strong>{{ booking.name }}</strong><br>
+                        Email: {{ booking.email }}<br>
+                        Phone: {{ booking.phone }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Booking Details -->
+            <div style="margin-bottom: 30px;">
+                <h4>Booking Details</h4>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <strong>Car:</strong> {{ booking.brand }} {{ booking.model }} ({{ booking.year }})
+                        </div>
+                        <div>
+                            <strong>Booking Date:</strong> {{ booking.created_at.strftime('%Y-%m-%d') if booking.created_at else 'N/A' }}
+                        </div>
+                        <div>
+                            <strong>Rental Period:</strong> {{ booking.start_date }} to {{ booking.end_date }}
+                        </div>
+                        <div>
+                            <strong>Status:</strong> 
+                            <span class="status-badge {% if booking.status == 'confirmed' %}status-confirmed{% elif booking.status == 'active' %}status-active{% elif booking.status == 'completed' %}status-completed{% else %}status-pending{% endif %}">
+                                {{ booking.status|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Items -->
+            <div style="margin-bottom: 30px;">
+                <h4>Invoice Summary</h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #667eea; color: white;">
+                            <th style="padding: 12px; text-align: left;">Description</th>
+                            <th style="padding: 12px; text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 12px;">Car Rental</td>
+                            <td style="padding: 12px; text-align: right;">${{ "%.2f"|format(booking.total + booking.discount) }}</td>
+                        </tr>
+                        {% if booking.discount > 0 %}
+                        <tr style="border-bottom: 1px solid #eee; color: #28a745;">
+                            <td style="padding: 12px;">Discount ({{ booking.promo_code }})</td>
+                            <td style="padding: 12px; text-align: right;">-${{ "%.2f"|format(booking.discount) }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr style="background: #f8f9fa; font-weight: bold;">
+                            <td style="padding: 12px;">TOTAL</td>
+                            <td style="padding: 12px; text-align: right;">${{ "%.2f"|format(booking.total) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer -->
+            <div style="border-top: 2px solid #667eea; padding-top: 20px; text-align: center; color: #666;">
+                <p>Thank you for choosing CarRental!</p>
+                <p>For any questions, please contact us at info@carrental.com or +855 12 345 678</p>
+            </div>
+
+            <!-- Print Button -->
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="window.print()" class="btn btn-primary">Print Invoice</button>
+                <a href="{{ url_for('my_bookings') }}" class="btn" style="background: #6c757d; color: white;">Back to Bookings</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .navbar, .flash-messages, button, a {
+        display: none !important;
+    }
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}
