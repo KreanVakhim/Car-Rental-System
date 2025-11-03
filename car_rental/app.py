@@ -272,13 +272,17 @@ def profile():
         if 'profile_pic' in request.files and request.files['profile_pic'].filename:
             file = request.files['profile_pic']
             if allowed_file(file.filename):
-                if filename != 'default.png':
-                    old_path = os.path.join(PROFILE_FOLDER, filename)
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                filename = secure_filename(f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
-                file.save(os.path.join(PROFILE_FOLDER, filename))
+                if file.content_length and file.content_length > 2 * 1024 * 1024:  # 2MB limit
+                    flash('Image size must be less than 2MB.', 'danger')
+                    filename = current_pic
+                else:
+                    if filename != 'default.png':
+                        old_path = os.path.join(PROFILE_FOLDER, filename)
+                        if os.path.exists(old_path):
+                            os.remove(old_path)
+                    ext = file.filename.rsplit('.', 1)[1].lower()
+                    filename = secure_filename(f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
+                    file.save(os.path.join(PROFILE_FOLDER, filename))
             else:
                 flash('Invalid file type. Use PNG, JPG, JPEG, GIF.', 'danger')
                 filename = current_pic

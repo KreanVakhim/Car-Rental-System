@@ -1,5 +1,183 @@
-/* add_promo.css — placeholder styles for Add Promotion (admin) */
-@import url("base.css");
 
-.add-promo{max-width:900px;margin:24px auto;padding:16px}
-.add-promo h2{margin-bottom:12px}
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --card-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            --input-focus: #667eea;
+            --btn-hover-scale: 1.05;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .add-promo-container {
+            max-width: 620px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            border-bottom: none;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 2rem;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .card-header .bi {
+            font-size: 2.2rem;
+        }
+
+        .card-body {
+            padding: 2.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-label .bi {
+            color: #764ba2;
+        }
+
+        .form-control, .form-control:focus {
+            border: 2px solid #ced4da;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-control:focus {
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .input-group-text {
+            background: transparent;
+            border-right: none;
+            border-radius: 0.75rem 0 0 0.75rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(var(--btn-hover-scale));
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: var(--transition);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        /* Date row enhancements */
+        .date-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .date-col {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        @media (max-width: 576px) {
+            .card-header h2 {
+                font-size: 1.75rem;
+            }
+            .card-body {
+                padding: 2rem 1.5rem;
+            }
+            .date-col {
+                min-width: 100%;
+            }
+        }
+
+        /* Animations */
+        .mb-3, .date-row {
+            opacity: 0;
+            animation: fadeInUp 0.6s forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mb-3:nth-child(1) { animation-delay: 0.1s; }
+        .mb-3:nth-child(2) { animation-delay: 0.2s; }
+        .date-row { animation-delay: 0.3s; }
+        .btn-primary { animation-delay: 0.5s; }
