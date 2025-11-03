@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}My Bookings{% endblock %}
+{% block content %}
+<h2>My Bookings</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Car</th>
+            <th>Dates</th>
+            <th>Days</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for b in bookings %}
+        <tr>
+            <td>
+                {% if b.image %}
+                    <img src="{{ url_for('uploaded_file', filename=b.image) }}" width="50">
+                {% endif %}
+                {{ b.brand }} {{ b.model }}
+            </td>
+            <td>{{ b.start_date }} to {{ b.end_date }}</td>
+            <td>{{ b.rental_days }}</td>
+            <td>${{ "%.2f"|format(b.total) }}</td>
+            <td><span class="badge bg-{{ 'success' if b.status=='confirmed' else 'warning' if b.status=='pending' else 'danger' }}">{{ b.status }}</span></td>
+            <td>
+                {% if b.status == 'pending' %}
+                    <a href="{{ url_for('payment', booking_id=b.id) }}" class="btn btn-sm btn-primary">Pay</a>
+                    <a href="{{ url_for('cancel_booking', booking_id=b.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Cancel?')">Cancel</a>
+                {% elif b.status == 'confirmed' %}
+                    <a href="{{ url_for('invoice', booking_id=b.id) }}" class="btn btn-sm btn-info">Invoice</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

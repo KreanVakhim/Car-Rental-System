@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Damage Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">
+        <i class="bi bi-file-text"></i> My Damage Reports
+    </h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, msg in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ msg }} <button class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-danger">
+                <tr>
+                    <th>#</th>
+                    <th>Car</th>
+                    <th>Description</th>
+                    <th>Image</th>
+                    <th>Status</th>
+                    <th>Reported</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reports %}
+                <tr>
+                    <td><strong>#{{ r.id }}</strong></td>
+                    <td>
+                        <strong>{{ r.brand }} {{ r.model }}</strong><br>
+                        <small class="text-muted">ID: {{ r.car_id }}</small>
+                    </td>
+                    <td style="max-width: 300px;">{{ r.description }}</td>
+                    <td>
+                        {% if r.image %}
+                            <a href="{{ url_for('damage_image', filename=r.image) }}" target="_blank">
+                                <img src="{{ url_for('damage_image', filename=r.image) }}" 
+                                     class="img-thumbnail" style="max-height:60px;">
+                            </a>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ 
+                            'success' if r.status == 'approved' else 
+                            'danger' if r.status == 'rejected' else 
+                            'warning' 
+                        }} fs-6">
+                            {{ r.status|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        <small>{{ r.reported_at.strftime('%b %d, %Y') }}<br>{{ r.reported_at.strftime('%I:%M %p') }}</small>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox"></i> No damage reports yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('staff_dashboard') }}" class="btn btn-outline-primary">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

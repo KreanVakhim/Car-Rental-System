@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Promotions{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4">Active Promotions</h2>
+
+    {% if promotions %}
+        <div class="row">
+            {% for p in promotions %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-primary">{{ p.code }}</h5>
+                        <p class="display-6 fw-bold text-success">{{ p.discount_pct }}% OFF</p>
+                        <p class="text-muted">
+                            Valid: {{ p.valid_from.strftime('%b %d') }} to {{ p.valid_to.strftime('%b %d, %Y') }}
+                        </p>
+                        <small class="text-secondary">Use code at checkout</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            No active promotions right now.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

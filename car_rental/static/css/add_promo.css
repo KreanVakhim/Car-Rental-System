@@ -1,0 +1,5 @@
+/* add_promo.css — placeholder styles for Add Promotion (admin) */
+@import url("base.css");
+
+.add-promo{max-width:900px;margin:24px auto;padding:16px}
+.add-promo h2{margin-bottom:12px}

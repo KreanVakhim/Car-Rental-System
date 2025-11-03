@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete Promotion - Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 0;">
+    <div style="max-width: 500px; margin: 0 auto; text-align: center;">
+        <div class="form-section">
+            <h2 style="color: #dc3545; margin-bottom: 20px;">Confirm Delete</h2>
+            <p>Are you sure you want to delete promotion code <strong>{{ promo.code }}</strong>?</p>
+            <p style="color: #666;">This action cannot be undone.</p>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                <a href="{{ url_for('delete_promo', pid=promo.id) }}" class="btn btn-danger">Yes, Delete</a>
+                <a href="{{ url_for('manage_promotions') }}" class="btn" style="background: #6c757d; color: white;">Cancel</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

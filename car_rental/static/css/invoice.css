@@ -1,0 +1,3 @@
+/* invoice.css */
+.invoice { max-width: 800px; margin: 2rem auto; font-size: 1.2rem; }
+@media print { body { background: white; } .invoice { box-shadow: none; } }

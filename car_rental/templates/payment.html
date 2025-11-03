@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Payment{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Payment for Booking #{{ booking.id }}</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5>{{ booking.brand }} {{ booking.model }}</h5>
+                    <p><strong>Dates:</strong> {{ booking.start_date }} to {{ booking.end_date }}</p>
+                    <p><strong>Total:</strong> <span class="text-success fs-4">${{ "%.2f"|format(booking.total) }}</span></p>
+                    {% if booking.discount > 0 %}
+                        <p><small>Discount: -${{ "%.2f"|format(booking.discount) }} ({{ booking.promo_code }})</small></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            {% if is_qr %}
+                <h5>Scan QR to Pay</h5>
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='img/qr-aba-pay.png') }}" alt="ABA QR" class="img-fluid" style="max-width: 250px;">
+                    <p class="mt-3">
+                        <strong>Amount: ${{ "%.2f"|format(booking.total) }}</strong><br>
+                        Pay via <strong>ABA</strong> or <strong>Wing</strong>
+                    </p>
+                    <a href="{{ url_for('confirm_payment', booking_id=booking.id) }}" class="btn btn-success btn-lg w-100">
+                        I Have Paid – Confirm
+                    </a>
+                </div>
+            {% else %}
+                <h5>Choose Payment Method</h5>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('confirm_payment', booking_id=booking.id) }}" class="btn btn-success btn-lg">
+                        Pay with Credit Card
+                    </a>
+                    <a href="{{ url_for('qr_payment', booking_id=booking.id) }}" class="btn btn-info btn-lg">
+                        Pay with QR Code (ABA / Wing)
+                    </a>
+                </div>
+            {% endif %}
+            <a href="{{ url_for('my_bookings') }}" class="btn btn-secondary mt-3 w-100">Back to Bookings</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

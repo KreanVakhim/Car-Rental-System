@@ -1,0 +1,5 @@
+/* confirm_delete_user.css — confirm delete user dialog styles */
+@import url("base.css");
+
+.confirm{max-width:560px;margin:40px auto;text-align:center}
+.confirm .btn-danger{background:#c33;color:#fff;padding:10px 16px;border-radius:6px}
