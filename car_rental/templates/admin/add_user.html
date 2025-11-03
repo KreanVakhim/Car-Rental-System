@@ -1,49 +1,34 @@
 {% extends "base.html" %}
-
-{% block title %}Add User - Admin{% endblock %}
-
+{% block title %}Add Car{% endblock %}
 {% block content %}
-<div class="container" style="padding: 40px 0;">
-    <div style="max-width: 600px; margin: 0 auto;">
-        <h1 style="margin-bottom: 30px;">Add New User</h1>
-        
-        <div class="form-section">
-            <form method="POST">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" name="name" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Phone</label>
-                    <input type="tel" name="phone" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Role</label>
-                    <select name="role" class="form-control" required>
-                        <option value="customer">Customer</option>
-                        <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                
-                <div style="display: flex; gap: 15px; margin-top: 30px;">
-                    <button type="submit" class="btn btn-primary">Add User</button>
-                    <a href="{{ url_for('manage_users') }}" class="btn" style="background: #6c757d; color: white;">Cancel</a>
-                </div>
-            </form>
+<div class="container mt-5">
+    <h2>Add New Car</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Brand</label>
+            <input type="text" name="brand" class="form-control" required>
         </div>
-    </div>
+        <div class="mb-3">
+            <label class="form-label">Model</label>
+            <input type="text" name="model" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Year</label>
+            <input type="number" name="year" class="form-control" min="1900" max="{{ current_year }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Price/Day</label>
+            <input type="number" step="0.01" name="price_day" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Seats</label>
+            <input type="number" name="seats" class="form-control" min="1" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Image</label>
+            <input type="file" name="image" class="form-control" accept=".png,.jpg,.jpeg,.gif">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Car</button>
+    </form>
 </div>
 {% endblock %}

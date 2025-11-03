@@ -1,23 +1,34 @@
 {% extends "base.html" %}
-{% block title %}All Cars{% endblock %}
+{% block title %}Available Cars{% endblock %}
+
 {% block content %}
-<h2>Available Cars</h2>
-<div class="row">
-    {% for car in cars %}
-    <div class="col-md-3 mb-4">
-        <div class="card h-100">
-            {% if car.image %}
-    <img src="{{ url_for('uploaded_file', filename=car.image) }}" class="card-img-top" style="height:150px; object-fit:cover;" alt="{{ car.brand }} {{ car.model }}">
-{% else %}
-    <span class="text-danger">No image uploaded</span>
-{% endif %}
-            <div class="card-body">
-                <h6>{{ car.brand }} {{ car.model }}</h6>
-                <p class="small mb-1">${{ car.price_day }}/day</p>
-                <a href="{{ url_for('book_car', cid=car.id) }}" class="btn btn-sm btn-success">Book Now</a>
+<div class="container mt-4">
+    <h2><i class="bi bi-truck"></i> Available Cars</h2>
+    <div class="row">
+        {% for car in cars %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if car.image and car.image != 'default_car.png' %}
+                    <img src="{{ url_for('uploaded_file', filename=car.image) }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                    <img src="{{ url_for('uploaded_file', filename='default_car.png') }}" class="card-img-top" alt="Default car image" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ car.brand }} {{ car.model }} ({{ car.year }})</h5>
+                    <p class="card-text">
+                        <strong>Price/Day:</strong> ${{ "%.2f"|format(car.price_day) }}<br>
+                        <strong>Seats:</strong> {{ car.seats }}<br>
+                        <strong>Available:</strong> {{ 'Yes' if car.available else 'No' }}
+                    </p>
+                    {% if session.user_id and session.role == 'customer' %}
+                        <a href="{{ url_for('book_car', cid=car.id) }}" class="btn btn-primary">Book Now</a>
+                    {% elif session.user_id and session.role == 'staff' %}
+                        <a href="{{ url_for('report_damage', cid=car.id) }}" class="btn btn-warning">Report Damage</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 {% endblock %}

@@ -7,18 +7,32 @@ import os
 import mysql.connector
 from mysql.connector import Error
 from werkzeug.utils import secure_filename
+from jinja2 import Environment
 
 app = Flask(__name__)
 app.secret_key = 'car_rental_kh_2025_secret'
+
+# Extend Jinja2 environment with a custom date filter
+def date_filter(value, format='%B %d, %Y'):
+    if value is None:
+        return ""
+    return value.strftime(format)
+
+app.jinja_env.filters['date'] = date_filter
 
 # ------------------- UPLOAD CONFIG -------------------
 UPLOAD_FOLDER = 'static/car_images'
 DAMAGE_FOLDER = 'static/damage_images'
 PROFILE_FOLDER = 'static/img'
+PAYMENT_IMAGES_FOLDER = 'static/payment_images'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['DAMAGE_FOLDER'] = DAMAGE_FOLDER
+app.config['PROFILE_FOLDER'] = PROFILE_FOLDER
+app.config['PAYMENT_IMAGES_FOLDER'] = PAYMENT_IMAGES_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DAMAGE_FOLDER, exist_ok=True)
 os.makedirs(PROFILE_FOLDER, exist_ok=True)
+os.makedirs(PAYMENT_IMAGES_FOLDER, exist_ok=True)
 
 ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -31,6 +45,10 @@ def uploaded_file(filename):
     print(f"Attempting to serve: {filename} from {full_path}")
     if not os.path.exists(full_path):
         print(f"File not found at: {full_path}")
+        # Fallback to default car image
+        default_path = os.path.join(app.config['UPLOAD_FOLDER'], 'default_car.png')
+        if os.path.exists(default_path):
+            return send_from_directory(app.config['UPLOAD_FOLDER'], 'default_car.png')
         return "Image not found", 404
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
@@ -41,6 +59,10 @@ def damage_image(filename):
 @app.route('/img/<filename>')
 def profile_pic(filename):
     return send_from_directory(PROFILE_FOLDER, filename)
+
+@app.route('/payment_images/<filename>')
+def payment_image(filename):
+    return send_from_directory(PAYMENT_IMAGES_FOLDER, filename)
 
 # ------------------- MySQL -------------------
 db_config = {
@@ -118,6 +140,7 @@ def init_db():
             discount DECIMAL(10,2) DEFAULT 0,
             promo_code VARCHAR(20),
             status ENUM('pending','confirmed','active','completed','cancelled') DEFAULT 'pending',
+            payment_proof VARCHAR(255),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (car_id) REFERENCES cars(id)
@@ -141,6 +164,7 @@ def init_db():
             staff_id INT NOT NULL,
             description TEXT NOT NULL,
             image VARCHAR(255),
+            status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
             reported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (car_id) REFERENCES cars(id),
             FOREIGN KEY (staff_id) REFERENCES users(id)
@@ -149,12 +173,22 @@ def init_db():
 
     cur.execute("SELECT COUNT(*) AS c FROM users")
     if cur.fetchone()['c'] == 0:
+        # Insert users with predefined profile pictures
         cur.executemany(
-            "INSERT INTO users (name,email,phone,password,role) VALUES (%s,%s,%s,%s,%s)",
+            "INSERT INTO users (name,email,phone,password,role,profile_pic) VALUES (%s,%s,%s,%s,%s,%s)",
             [
-                ('Admin KH', 'admin@carrental.com', '012345678', 'admin123', 'admin'),
-                ('Staff One', 'staff@carrental.com', '098765432', 'staff123', 'staff'),
-                ('Sokha', 'sokha@test.com', '011223344', 'cust123', 'customer')
+                ('Admin KH', 'admin@carrental.com', '012345678', 'admin123', 'admin', 'user1.png'),
+                ('Staff One', 'staff@carrental.com', '098765432', 'staff123', 'staff', 'staff1.png'),
+                ('Staff Two', 'staff2@carrental.com', '098765433', 'staff123', 'staff', 'staff2.png'),
+                ('Sokha', 'sokha@test.com', '011223344', 'cust123', 'customer', 'user2.png')
+            ]
+        )
+        # Insert cars with predefined images
+        cur.executemany(
+            "INSERT INTO cars (brand, model, year, price_day, seats, image) VALUES (%s,%s,%s,%s,%s,%s)",
+            [
+                ('Toyota', 'Camry', 2023, 50.00, 5, 'car1.png'),
+                ('Honda', 'Civic', 2022, 45.00, 5, 'car2.png')
             ]
         )
         today = date.today()
@@ -208,8 +242,8 @@ def register():
         if query("SELECT id FROM users WHERE email=%s", (request.form['email'],), fetchone=True):
             flash('Email already taken', 'danger')
         else:
-            query("INSERT INTO users (name,email,phone,password,role) VALUES (%s,%s,%s,%s,'customer')",
-                  (request.form['name'], request.form['email'], request.form['phone'], request.form['password']), commit=True)
+            query("INSERT INTO users (name,email,phone,password,role,profile_pic) VALUES (%s,%s,%s,%s,'customer',%s)",
+                  (request.form['name'], request.form['email'], request.form['phone'], request.form['password'], 'user1.png'), commit=True)
             flash('Registered! Please login.', 'success')
             return redirect('/login')
     return render_template('register.html')
@@ -334,14 +368,35 @@ def my_bookings():
 
 @app.route('/cancel_booking/<int:booking_id>')
 def cancel_booking(booking_id):
-    if 'user_id' not in session: return redirect('/login')
-    b = query("SELECT * FROM bookings WHERE id=%s AND user_id=%s", (booking_id, session['user_id']), fetchone=True)
-    if b and b['status'] in ('pending', 'confirmed'):
-        query("UPDATE bookings SET status='cancelled' WHERE id=%s", (booking_id,), commit=True)
-        query("UPDATE cars SET available=TRUE WHERE id=%s", (b['car_id'],), commit=True)
-        flash('Booking cancelled!', 'success')
+    if 'user_id' not in session:
+        flash('Please login to cancel a booking', 'warning')
+        return redirect('/login')
+    
+    booking = query("SELECT * FROM bookings WHERE id=%s AND user_id=%s", (booking_id, session['user_id']), fetchone=True)
+    if not booking:
+        flash('Booking not found or not authorized', 'danger')
+        return redirect('/my_bookings')
+
+    current_date = date.today()
+    start_date = datetime.strptime(booking['start_date'], '%Y-%m-%d').date()
+    time_to_start = (start_date - current_date).days
+
+    # Cancellation rules
+    if booking['status'] in ['pending', 'confirmed']:
+        # Allow cancellation up to 24 hours before start date
+        if time_to_start > 1:
+            query("UPDATE bookings SET status='cancelled' WHERE id=%s", (booking_id,), commit=True)
+            query("UPDATE cars SET available=TRUE WHERE id=%s", (booking['car_id'],), commit=True)
+            flash('Booking cancelled successfully!', 'success')
+        else:
+            flash('Cannot cancel: Booking starts within 24 hours', 'danger')
+    elif booking['status'] == 'active':
+        flash('Cannot cancel: Booking is currently active', 'danger')
+    elif booking['status'] in ['completed', 'cancelled']:
+        flash('Booking is already completed or cancelled', 'danger')
     else:
-        flash('Cannot cancel', 'danger')
+        flash('Cannot cancel: Invalid booking status', 'danger')
+
     return redirect('/my_bookings')
 
 @app.route('/payment/<int:booking_id>')
@@ -364,6 +419,36 @@ def confirm_payment(booking_id):
     query("UPDATE bookings SET status='confirmed' WHERE id=%s AND user_id=%s", (booking_id, session['user_id']), commit=True)
     flash('Payment confirmed!', 'success')
     return redirect('/my_bookings')
+
+@app.route('/upload_payment_proof/<int:booking_id>', methods=['POST'])
+def upload_payment_proof(booking_id):
+    if 'user_id' not in session:
+        flash('Please login to upload payment proof', 'warning')
+        return redirect('/login')
+    
+    booking = query("SELECT * FROM bookings WHERE id=%s AND user_id=%s", (booking_id, session['user_id']), fetchone=True)
+    if not booking:
+        flash('Booking not found', 'danger')
+        return redirect('/my_bookings')
+
+    if 'payment_proof' not in request.files:
+        flash('No file uploaded', 'danger')
+        return redirect(url_for('qr_payment', booking_id=booking_id))
+
+    file = request.files['payment_proof']
+    if file and allowed_file(file.filename):
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = secure_filename(f"proof_{booking_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
+        file.save(os.path.join(app.config['PAYMENT_IMAGES_FOLDER'], filename))
+        
+        # Update booking with payment proof reference
+        query("UPDATE bookings SET payment_proof=%s WHERE id=%s", (filename, booking_id), commit=True)
+        flash('Payment proof uploaded successfully! Awaiting verification.', 'success')
+    else:
+        flash('Invalid file type. Use PNG, JPG, or JPEG.', 'danger')
+        return redirect(url_for('qr_payment', booking_id=booking_id))
+
+    return redirect(url_for('my_bookings'))
 
 @app.route('/invoice/<int:booking_id>')
 def invoice(booking_id):
@@ -447,7 +532,9 @@ def add_car():
             flash('Number of seats must be greater than zero.', 'danger')
             return redirect(url_for('add_car'))
 
-        filename = 'default_car.png'  # Default image if no upload
+        # Use predefined car image names sequentially
+        cur_car_count = query("SELECT COUNT(*) as c FROM cars", fetchone=True)['c']
+        filename = f'car{cur_car_count + 1}.png' if cur_car_count < 2 else 'default_car.png'  # Limit to car1, car2 for now
         if 'image' in request.files:
             file = request.files['image']
             if file and allowed_file(file.filename):
@@ -537,8 +624,8 @@ def manage_users():
 def add_user():
     if session.get('role') != 'admin': return redirect('/')
     if request.method == 'POST':
-        query("INSERT INTO users (name,email,phone,password,role) VALUES (%s,%s,%s,%s,%s)",
-              (request.form['name'], request.form['email'], request.form['phone'], request.form['password'], request.form['role']), commit=True)
+        query("INSERT INTO users (name,email,phone,password,role,profile_pic) VALUES (%s,%s,%s,%s,%s,%s)",
+              (request.form['name'], request.form['email'], request.form['phone'], request.form['password'], request.form['role'], 'user1.png'), commit=True)
         flash('User added', 'success')
         return redirect('/admin/manage_users')
     return render_template('admin/add_user.html')
@@ -558,8 +645,8 @@ def add_staff():
         if query("SELECT id FROM users WHERE email=%s", (email,), fetchone=True):
             flash('Email already in use', 'danger')
         else:
-            query("INSERT INTO users (name, email, phone, password, role) VALUES (%s, %s, %s, %s, 'staff')",
-                  (name, email, phone, password), commit=True)
+            query("INSERT INTO users (name, email, phone, password, role, profile_pic) VALUES (%s, %s, %s, %s, 'staff', %s)",
+                  (name, email, phone, password, 'staff1.png'), commit=True)
             flash('Staff added successfully!', 'success')
             return redirect('/admin/manage_users')
     
@@ -572,8 +659,8 @@ def edit_user(uid):
     if not user: return redirect('/admin/manage_users')
 
     if request.method == 'POST':
-        query("UPDATE users SET name=%s, email=%s, phone=%s, role=%s WHERE id=%s",
-              (request.form['name'], request.form['email'], request.form['phone'], request.form['role'], uid), commit=True)
+        query("UPDATE users SET name=%s, email=%s, phone=%s, role=%s, profile_pic=%s WHERE id=%s",
+              (request.form['name'], request.form['email'], request.form['phone'], request.form['role'], request.form['profile_pic'] or 'default.png', uid), commit=True)
         flash('User updated', 'success')
         return redirect('/admin/manage_users')
     return render_template('admin/edit_user.html', user=user)
@@ -654,19 +741,72 @@ def damage_reports():
     
     return render_template('admin/damage_reports.html', reports=reports)
 
+@app.route('/admin/review_damage/<int:report_id>/<string:action>', methods=['POST'])
+def review_damage(report_id, action):
+    if session.get('role') != 'admin':
+        flash('Admin only!', 'danger')
+        return redirect('/')
+    
+    report = query("SELECT * FROM damage_reports WHERE id=%s", (report_id,), fetchone=True)
+    if not report:
+        flash('Damage report not found', 'danger')
+        return redirect('/admin/damage_reports')
+    
+    if action not in ['approve', 'reject']:
+        flash('Invalid action', 'danger')
+        return redirect('/admin/damage_reports')
+    
+    new_status = 'approved' if action == 'approve' else 'rejected'
+    query("UPDATE damage_reports SET status=%s WHERE id=%s", (new_status, report_id), commit=True)
+    flash(f'Damage report {report_id} {new_status} successfully!', 'success')
+    return redirect('/admin/damage_reports')
+
 # ------------------- STAFF -------------------
 @app.route('/staff')
 def staff_dashboard():
     if session.get('role') != 'staff': return redirect('/')
-    return render_template('staff/staff_dashboard.html')
+    
+    # Dashboard stats
+    pending_checkins = query("SELECT COUNT(*) as c FROM bookings WHERE status='confirmed'", fetchone=True)['c'] or 0
+    active_rentals = query("SELECT b.*, c.brand, c.model FROM bookings b JOIN cars c ON b.car_id=c.id WHERE b.status='active'", fetchall=True) or []
+    damage_count = query("SELECT COUNT(*) as c FROM damage_reports WHERE staff_id=%s", (session['user_id'],), fetchone=True)['c'] or 0
+    today_returns = query("SELECT b.*, c.brand, c.model FROM bookings b JOIN cars c ON b.car_id=c.id WHERE b.status='completed' AND b.end_date=%s", (date.today(),), fetchall=True) or []
+    recent_checkins = query("""
+        SELECT b.id, b.start_date, u.name AS customer_name
+        FROM bookings b JOIN users u ON b.user_id = u.id
+        WHERE b.status='confirmed' ORDER BY b.start_date DESC LIMIT 5
+    """, fetchall=True) or []
+    damaged_cars = query("""
+        SELECT c.id, c.brand, c.model
+        FROM cars c JOIN damage_reports dr ON c.id = dr.car_id
+        WHERE dr.status='pending' GROUP BY c.id, c.brand, c.model
+    """, fetchall=True) or []
+
+    return render_template('staff/staff_dashboard.html',
+                          pending_checkins=pending_checkins,
+                          active_rentals=active_rentals,
+                          damage_count=damage_count,
+                          today_returns=today_returns,
+                          recent_checkins=recent_checkins,
+                          damaged_cars=damaged_cars)
 
 @app.route('/staff/report_damage/<int:cid>', methods=['GET', 'POST'])
 def report_damage(cid):
-    if session.get('role') != 'staff': return redirect('/')
+    if session.get('role') != 'staff':
+        flash('Access denied! Staff only.', 'danger')
+        return redirect('/')
+    
     car = query("SELECT * FROM cars WHERE id=%s", (cid,), fetchone=True)
-    if not car: return redirect('/cars')
+    if not car:
+        flash('Car not found.', 'danger')
+        return redirect('/staff')
 
     if request.method == 'POST':
+        description = request.form.get('description', '').strip()
+        if not description:
+            flash('Description is required.', 'danger')
+            return redirect(url_for('report_damage', cid=cid))
+
         filename = None
         if 'image' in request.files and request.files['image'].filename:
             img = request.files['image']
@@ -674,40 +814,91 @@ def report_damage(cid):
                 ext = img.filename.rsplit('.', 1)[1].lower()
                 filename = secure_filename(f"damage_{car['brand']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
                 img.save(os.path.join(DAMAGE_FOLDER, filename))
-        query("INSERT INTO damage_reports (car_id,staff_id,description,image) VALUES (%s,%s,%s,%s)",
-              (cid, session['user_id'], request.form['description'], filename), commit=True)
-        flash('Damage reported!', 'success')
+            else:
+                flash('Invalid file type. Use PNG, JPG, JPEG, or GIF.', 'danger')
+                return redirect(url_for('report_damage', cid=cid))
+
+        query("INSERT INTO damage_reports (car_id, staff_id, description, image, status) VALUES (%s, %s, %s, %s, 'pending')",
+              (cid, session['user_id'], description, filename), commit=True)
+        flash('Damage reported successfully!', 'success')
         return redirect('/staff')
+
     return render_template('staff/report_damage.html', car=car)
 
 @app.route('/staff/check_in/<int:booking_id>')
 def check_in(booking_id):
     if session.get('role') != 'staff': return redirect('/')
-    query("UPDATE bookings SET status='active' WHERE id=%s", (booking_id,), commit=True)
-    flash('Car checked in', 'success')
-    return redirect('/staff')
+    booking = query("SELECT * FROM bookings WHERE id=%s", (booking_id,), fetchone=True)
+    if booking and booking['status'] == 'confirmed':
+        query("UPDATE bookings SET status='active' WHERE id=%s", (booking_id,), commit=True)
+        flash('Car checked in', 'success')
+    else:
+        flash('Cannot check in (invalid status)', 'danger')
+    return redirect('/staff/rental_history')
 
 @app.route('/staff/check_out/<int:booking_id>')
 def check_out(booking_id):
     if session.get('role') != 'staff': return redirect('/')
-    query("UPDATE bookings SET status='completed' WHERE id=%s", (booking_id,), commit=True)
-    b = query("SELECT car_id FROM bookings WHERE id=%s", (booking_id,), fetchone=True)
-    if b:
-        query("UPDATE cars SET available=TRUE WHERE id=%s", (b['car_id'],), commit=True)
-    flash('Car checked out', 'success')
-    return redirect('/staff')
+    booking = query("SELECT * FROM bookings WHERE id=%s", (booking_id,), fetchone=True)
+    if booking and booking['status'] == 'active':
+        query("UPDATE bookings SET status='completed' WHERE id=%s", (booking_id,), commit=True)
+        query("UPDATE cars SET available=TRUE WHERE id=%s", (booking['car_id'],), commit=True)
+        flash('Car checked out', 'success')
+    else:
+        flash('Cannot check out (invalid status)', 'danger')
+    return redirect('/staff/rental_history')
 
 @app.route('/staff/rental_history')
 def rental_history():
     if session.get('role') != 'staff': return redirect('/')
-    bookings = query("""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
+
+    # Filter parameters
+    start_date = request.args.get('start')
+    end_date = request.args.get('end')
+    car_model = request.args.get('car', '').strip()
+
+    query_base = """
         SELECT b.*, c.brand, c.model, u.name as customer_name 
         FROM bookings b 
         JOIN cars c ON b.car_id = c.id 
         JOIN users u ON b.user_id = u.id 
-        ORDER BY b.created_at DESC
-    """, fetchall=True) or []
-    return render_template('staff/rental_history.html', bookings=bookings)
+        WHERE 1=1
+    """
+    params = []
+    if start_date:
+        query_base += " AND b.start_date >= %s"
+        params.append(start_date)
+    if end_date:
+        query_base += " AND b.end_date <= %s"
+        params.append(end_date)
+    if car_model:
+        query_base += " AND c.model LIKE %s"
+        params.append(f'%{car_model}%')
+    query_base += " ORDER BY b.created_at DESC LIMIT %s OFFSET %s"
+    params.extend([per_page, offset])
+
+    bookings = query(query_base, params, fetchall=True) or []
+    total = query("SELECT COUNT(*) as count FROM bookings", fetchone=True)['count']
+    total_pages = (total + per_page - 1) // per_page
+
+    return render_template('staff/rental_history.html', bookings=bookings, page=page, total=total, per_page=per_page, total_pages=total_pages)
+
+@app.route('/staff/my_damage_reports')
+def my_damage_reports():
+    if session.get('role') != 'staff':
+        flash('Staff only!', 'danger')
+        return redirect('/')
+    reports = query("""
+        SELECT dr.*, c.brand, c.model
+        FROM damage_reports dr
+        JOIN cars c ON dr.car_id = c.id
+        WHERE dr.staff_id = %s
+        ORDER BY dr.reported_at DESC
+    """, (session['user_id'],), fetchall=True) or []
+    return render_template('staff/my_damage_reports.html', reports=reports)
 
 # ------------------- STATIC PAGES -------------------
 @app.route('/privacy_policy')
