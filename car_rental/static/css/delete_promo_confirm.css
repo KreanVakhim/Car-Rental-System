@@ -1,5 +1,0 @@
-/* delete_promo_confirm.css — small dialog styles */
-@import url("base.css");
-
-.delete-promo{max-width:600px;margin:36px auto;text-align:center}
-.delete-promo .btn-danger{background:#b00;color:#fff;padding:8px 12px;border-radius:6px}

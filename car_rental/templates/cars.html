@@ -1,34 +1,158 @@
 {% extends "base.html" %}
-{% block title %}Available Cars{% endblock %}
+{% block title %}Available Cars - Car Rental KH{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2><i class="bi bi-truck"></i> Available Cars</h2>
-    <div class="row">
-        {% for car in cars %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                {% if car.image and car.image != 'default_car.png' %}
-                    <img src="{{ url_for('uploaded_file', filename=car.image) }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}" style="height: 200px; object-fit: cover;">
-                {% else %}
-                    <img src="{{ url_for('uploaded_file', filename='default_car.png') }}" class="card-img-top" alt="Default car image" style="height: 200px; object-fit: cover;">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ car.brand }} {{ car.model }} ({{ car.year }})</h5>
-                    <p class="card-text">
-                        <strong>Price/Day:</strong> ${{ "%.2f"|format(car.price_day) }}<br>
-                        <strong>Seats:</strong> {{ car.seats }}<br>
-                        <strong>Available:</strong> {{ 'Yes' if car.available else 'No' }}
-                    </p>
-                    {% if session.user_id and session.role == 'customer' %}
-                        <a href="{{ url_for('book_car', cid=car.id) }}" class="btn btn-primary">Book Now</a>
-                    {% elif session.user_id and session.role == 'staff' %}
-                        <a href="{{ url_for('report_damage', cid=car.id) }}" class="btn btn-warning">Report Damage</a>
-                    {% endif %}
+<br><br><br>
+<!-- CLEAN HERO -->
+<section class="cars-hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Available Vehicles</h1>
+            <p class="lead">Choose your royal ride • {{ cars|length }} cars ready</p>
+            
+            <!-- SEARCH + FILTER BAR -->
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search brand, model, year...">
+                </div>
+                <div class="filters">
+                    <select id="filterSeats">
+                        <option value="">All Seats</option>
+                        <option value="4">4 Seats</option>
+                        <option value="5">5 Seats</option>
+                        <option value="7">7 Seats</option>
+                    </select>
+                    <select id="filterPrice">
+                        <option value="">Sort by Price</option>
+                        <option value="low">Low to High</option>
+                        <option value="high">High to Low</option>
+                    </select>
                 </div>
             </div>
         </div>
+    </div>
+</section>
+
+<!-- CARS GRID -->
+<main class="container py-5">
+    <div class="row g-4" id="carsGrid">
+        {% for car in cars %}
+        <div class="col-md-6 col-lg-4 car-item" 
+             data-brand="{{ car.brand|lower }}" 
+             data-model="{{ car.model|lower }}" 
+             data-year="{{ car.year }}" 
+             data-seats="{{ car.seats }}" 
+             data-price="{{ car.price_day }}">
+            <article class="car-card">
+                <div class="car-image">
+                    {% if car.image and car.image != 'default_car.png' %}
+                        <img src="{{ url_for('uploaded_file', filename=car.image) }}" 
+                             alt="{{ car.brand }} {{ car.model }}">
+                    {% else %}
+                        <div class="placeholder">
+                            <i class="bi bi-car-front-fill"></i>
+                        </div>
+                    {% endif %}
+                    <div class="price-tag">${{ "%.0f"|format(car.price_day) }}<small>/day</small></div>
+                </div>
+                
+                <div class="car-content">
+                    <h3>{{ car.brand }} {{ car.model }}</h3>
+                    <div class="car-specs">
+                        <span><i class="bi bi-calendar"></i> {{ car.year }}</span>
+                        <span><i class="bi bi-people"></i> {{ car.seats }} seats</span>
+                    </div>
+                    
+                    <div class="car-actions">
+                        {% if session.user_id and session.role == 'customer' %}
+                            <a href="{{ url_for('book_car', cid=car.id) }}" class="btn btn-primary">
+                                Book Now
+                            </a>
+                        {% elif session.user_id and session.role == 'staff' %}
+                            <a href="{{ url_for('report_damage', car_id=car.id) }}" class="btn btn-warning">
+                                Report Damage
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('login') }}" class="btn btn-outline">
+                                Login to Book
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        </div>
         {% endfor %}
     </div>
-</div>
+
+    <!-- EMPTY STATE -->
+    <div id="emptyState" class="text-center py-5" style="display: none;">
+        <i class="bi bi-emoji-frown display-1 text-muted"></i>
+        <h3 class="mt-4">No cars found</h3>
+        <p class="text-muted">Try adjusting your filters</p>
+    </div>
+</main>
+
+<!-- LIVE FILTER SCRIPT -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const filterSeats = document.getElementById('filterSeats');
+    const filterPrice = document.getElementById('filterPrice');
+    const carsGrid = document.getElementById('carsGrid');
+    const emptyState = document.getElementById('emptyState');
+    const carItems = document.querySelectorAll('.car-item');
+
+    function filterCars() {
+        let visible = 0;
+        const search = searchInput.value.toLowerCase();
+        const seats = filterSeats.value;
+        const priceSort = filterPrice.value;
+
+        let cars = Array.from(carItems);
+
+        // Apply search
+        cars.forEach(car => {
+            const brand = car.dataset.brand;
+            const model = car.dataset.model;
+            const year = car.dataset.year;
+            const text = `${brand} ${model} ${year}`;
+            
+            const matchesSearch = text.includes(search);
+            const matchesSeats = !seats || car.dataset.seats === seats;
+            
+            if (matchesSearch && matchesSeats) {
+                car.style.display = '';
+                visible++;
+            } else {
+                car.style.display = 'none';
+            }
+        });
+
+        // Sort by price
+        if (priceSort && visible > 0) {
+            const visibleCars = cars.filter(c => c.style.display !== 'none');
+            visibleCars.sort((a, b) => {
+                const priceA = parseFloat(a.dataset.price);
+                const priceB = parseFloat(b.dataset.price);
+                return priceSort === 'low' ? priceA - priceB : priceB - priceA;
+            });
+            
+            visibleCars.forEach((car, index) => {
+                carsGrid.appendChild(car);
+            });
+        }
+
+        // Show/hide empty state
+        emptyState.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    searchInput.addEventListener('input', filterCars);
+    filterSeats.addEventListener('change', filterCars);
+    filterPrice.addEventListener('change', filterCars);
+
+    // Initial filter
+    filterCars();
+});
+</script>
 {% endblock %}

@@ -1,72 +1,42 @@
-{% extends "base.html" %}
+@app.route('/book/<int:cid>', methods=['GET', 'POST'])
+def book_car(cid):
+    if session.get('role') != 'customer':
+        flash('Login as customer', 'warning')
+        return redirect('/login')
+    update_car_availability()
+    car = query("SELECT * FROM cars WHERE id=%s AND available=TRUE", (cid,), fetchone=True)
+    if not car:
+        return redirect('/cars')
+    
+    # Fetch active promotions
+    promos = query(
+        "SELECT * FROM promotions WHERE valid_from <= %s AND valid_to >= %s",
+        (date.today(), date.today()), fetchall=True
+    ) or []
 
-{% block title %}Book {{ car.brand }} {{ car.model }} - Car Rental{% endblock %}
+    if request.method == 'POST':
+        s = request.form['start_date']
+        e = request.form['end_date']
+        days = (datetime.strptime(e, '%Y-%m-%d').date() - datetime.strptime(s, '%Y-%m-%d').date()).days + 1
+        total = car['price_day'] * days
 
-{% block content %}
-<section class="car-detail">
-    <div class="container">
-        <div class="car-detail-main">
-            <div>
-                {% if car.image %}
-                <img src="{{ url_for('uploaded_file', filename=car.image) }}" alt="{{ car.brand }} {{ car.model }}" class="car-detail-image">
-                {% else %}
-                <img src="https://via.placeholder.com/600x400?text=No+Image" alt="No Image" class="car-detail-image">
-                {% endif %}
-            </div>
-            
-            <div class="booking-form">
-                <h2>Book {{ car.brand }} {{ car.model }}</h2>
-                
-                <form method="POST">
-                    <div class="form-group">
-                        <label class="form-label">Start Date</label>
-                        <input type="date" name="start_date" class="form-control" min="{{ min_date }}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">End Date</label>
-                        <input type="date" name="end_date" class="form-control" min="{{ min_date }}" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Promo Code (Optional)</label>
-                        <input type="text" name="promo_code" class="form-control" placeholder="Enter promo code">
-                        {% if promotions %}
-                        <small style="color: #666;">Available codes: 
-                            {% for promo in promotions %}
-                            <strong>{{ promo.code }}</strong> ({{ promo.discount_pct }}% off){% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                        </small>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="booking-summary">
-                        <h4>Booking Information</h4>
-                        <div class="summary-item">
-                            <span>Price per day:</span>
-                            <span>${{ "%.2f"|format(car.price_day) }}</span>
-                        </div>
-                        <div class="summary-item">
-                            <span>Car Details:</span>
-                            <span>{{ car.brand }} {{ car.model }} ({{ car.year }})</span>
-                        </div>
-                        <div class="summary-item">
-                            <span>Seating Capacity:</span>
-                            <span>{{ car.seats }} people</span>
-                        </div>
-                        <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin-top: 15px;">
-                            <p style="margin: 0; color: #388e3c;">
-                                <strong>Note:</strong> The total amount will be calculated after you select your dates and apply any promo codes.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; margin-top: 20px;">
-                        Calculate Total & Continue
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</section>
-{% endblock %}
+        promo_code = request.form.get('promo_code', '').strip()
+        discount = 0
+        if promo_code:
+            promo = query(
+                "SELECT * FROM promotions WHERE code=%s AND valid_from <= %s AND valid_to >= %s",
+                (promo_code, date.today(), date.today()), fetchone=True
+            )
+            if promo:
+                discount = total * (promo['discount_pct'] / 100)
+                total -= discount
+
+        bid = query(
+            "INSERT INTO bookings (user_id,car_id,start_date,end_date,total,discount,promo_code,status) VALUES (%s,%s,%s,%s,%s,%s,%s,'pending')",
+            (session['user_id'], cid, s, e, total, discount, promo_code if discount > 0 else None), commit=True
+        )
+        query("UPDATE cars SET available=FALSE WHERE id=%s", (cid,), commit=True)
+        flash('Booking created!', 'success')
+        return redirect(url_for('payment', booking_id=bid))
+    
+    return render_template('book.html', car=car, min_date=date.today().strftime('%Y-%m-%d'), promotions=promos)

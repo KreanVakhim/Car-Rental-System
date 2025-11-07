@@ -1,6 +1,0 @@
-/* edit_car.css — styles for Edit Car page */
-@import url("base.css");
-
-.edit-car-form{max-width:900px;margin:20px auto;padding:16px}
-.edit-car-form h2{margin-bottom:10px}
-.edit-car-form input, .edit-car-form button{display:block;width:100%;margin:8px 0;padding:8px}

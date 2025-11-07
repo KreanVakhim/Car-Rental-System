@@ -1,57 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Manage Bookings{% endblock %}
+{% block title %}All Bookings{% endblock %}
 {% block content %}
 <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>All Bookings</h2>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
-
-    <div class="card shadow">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th>Car</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for b in bookings %}
-                        <tr>
-                            <td>{{ b.id }}</td>
-                            <td>{{ b.customer_name }}</td>
-                            <td>{{ b.brand }} {{ b.model }}</td>
-                            <td>{{ b.start_date }}</td>
-                            <td>{{ b.end_date }}</td>
-                            <td class="text-success fw-bold">${{ "%.2f"|format(b.total) }}</td>
-                            <td>
-                                <form method="POST" action="{{ url_for('update_booking_status', bid=b.id, status='pending') }}" class="d-inline">
-                                    <select class="form-select form-select-sm" onchange="this.form.submit()">
-                                        <option value="pending" {{ 'selected' if b.status == 'pending' }}>Pending</option>
-                                        <option value="confirmed" {{ 'selected' if b.status == 'confirmed' }}>Confirmed</option>
-                                        <option value="active" {{ 'selected' if b.status == 'active' }}>Active</option>
-                                        <option value="completed" {{ 'selected' if b.status == 'completed' }}>Completed</option>
-                                        <option value="cancelled" {{ 'selected' if b.status == 'cancelled' }}>Cancelled</option>
-                                    </select>
-                                </form>
-                            </td>
-                            <td>
-                                <a href="{{ url_for('invoice', booking_id=b.id) }}" class="btn btn-sm btn-outline-info">Invoice</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <h2>All Bookings</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Car</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td>{{ b.id }}</td>
+                    <td>{{ b.customer_name }}</td>
+                    <td>{{ b.brand }} {{ b.model }}</td>
+                    <td>{{ b.start_date }}</td>
+                    <td>{{ b.end_date }}</td>
+                    <td>${{ "%.2f"|format(b.total) }}</td>
+                    <td><span class="badge bg-{{ ' c' if b.status=='completed' else 'primary' if b.status=='active' else 'warning' if b.status in ('pending','confirmed') else 'danger' }}">{{ b.status|title }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

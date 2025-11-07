@@ -1,31 +1,51 @@
 {% extends "base.html" %}
-
-{% block title %}Cancel Booking - Car Rental{% endblock %}
+{% block title %}Cancel Booking - Car Rental KH{% endblock %}
 
 {% block content %}
-<div class="container" style="padding: 40px 0;">
-    <div style="max-width: 500px; margin: 0 auto; text-align: center;">
-        <div class="form-section">
-            <h2 style="color: #dc3545; margin-bottom: 20px;">Cancel Booking</h2>
-            <p>Are you sure you want to cancel this booking?</p>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
-                <h4>Booking Details</h4>
-                <p><strong>Car:</strong> {{ booking.brand }} {{ booking.model }}</p>
-                <p><strong>Dates:</strong> {{ booking.start_date }} to {{ booking.end_date }}</p>
-                <p><strong>Total:</strong> ${{ "%.2f"|format(booking.total) }}</p>
-                <p><strong>Status:</strong> 
-                    <span class="status-badge {% if booking.status == 'pending' %}status-pending{% elif booking.status == 'confirmed' %}status-confirmed{% endif %}">
+<section class="cancel-section py-5">
+    <div class="container">
+        <div class="cancel-card mx-auto">
+            <div class="text-center mb-4">
+                <div class="cancel-icon mb-3">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <h2 class="fw-bold">Cancel Booking</h2>
+                <p class="text-muted">Are you sure you want to cancel this booking?</p>
+            </div>
+
+            <!-- Booking Details -->
+            <div class="booking-details">
+                <h4 class="fw-bold mb-3">Booking Details</h4>
+                <div class="detail-row">
+                    <span class="detail-label">Car:</span>
+                    <span class="detail-value">{{ booking.brand }} {{ booking.model }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Dates:</span>
+                    <span class="detail-value">{{ booking.start_date }} to {{ booking.end_date }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total:</span>
+                    <span class="detail-value text-primary fw-bold">${{ "%.2f"|format(booking.total) }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="badge status-badge {{ 'status-pending' if booking.status == 'pending' else 'status-confirmed' if booking.status == 'confirmed' else '' }}">
                         {{ booking.status|title }}
                     </span>
-                </p>
+                </div>
             </div>
-            
-            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
-                <a href="{{ url_for('cancel_booking', bid=booking.id) }}" class="btn btn-danger">Yes, Cancel Booking</a>
-                <a href="{{ url_for('my_bookings') }}" class="btn" style="background: #6c757d; color: white;">Go Back</a>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons mt-4">
+                <a href="{{ url_for('cancel_booking', bid=booking.id) }}" class="btn btn-cancel">
+                    <i class="bi bi-x-circle"></i> Yes, Cancel Booking
+                </a>
+                <a href="{{ url_for('my_bookings') }}" class="btn btn-back">
+                    <i class="bi bi-arrow-left"></i> Go Back
+                </a>
             </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

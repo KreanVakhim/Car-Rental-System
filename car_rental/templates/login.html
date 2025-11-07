@@ -1,42 +1,77 @@
 {% extends "base.html" %}
+{% block title %}Login - Car Rental KH{% endblock %}
 
-{% block title %}Login - Car Rental{% endblock %}
-{% set css_file = 'auth.css' %}
+{% block styles %}
+
+<br><br><br>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login-ultra.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h1>Welcome Back</h1>
-            <p>Sign in to your account</p>
-        </div>
+
+<div class="login-page">
+    <div class="login-container">
         
-        <form method="POST">
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" name="email" class="form-control" required>
+        <!-- Main Login Card -->
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <svg viewBox="0 0 100 100" class="crown">
+                        <path d="M50 15 L60 35 L80 35 L65 50 L70 70 L50 60 L30 70 L35 50 L20 35 L40 35 Z" fill="#ffd700"/>
+                    </svg>
+                </div>
+                <h1>Welcome Back</h1>
+                <p>Sign in to access your royal fleet</p>
             </div>
-            
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" required>
+
+            <form method="POST" class="login-form">
+                <div class="input-group">
+                    <input type="email" name="email" required autocomplete="email" autofocus>
+                    <label>Email Address</label>
+                    <i class="bi bi-envelope"></i>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" name="password" required autocomplete="current-password">
+                    <label>Password</label>
+                    <i class="bi bi-lock"></i>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <span>Sign In</span>
+                    <div class="btn-shine"></div>
+                </button>
+            </form>
+
+            <div class="login-links">
+                <a href="{{ url_for('register') }}">Create new account</a>
             </div>
-            
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Login</button>
-        </form>
-        
-        <div class="auth-footer">
-            <p>Don't have an account? <a href="{{ url_for('register') }}">Sign up</a></p>
         </div>
-        
-        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-            <h4 style="margin-bottom: 15px; font-size: 1rem;">Demo Accounts:</h4>
-            <div style="font-size: 0.9rem;">
-                <div><strong>Admin:</strong> admin@carrental.com / admin123</div>
-                <div><strong>Staff:</strong> staff@carrental.com / staff123</div>
-                <div><strong>Customer:</strong> sokha@test.com / cust123</div>
+
+        <!-- Demo Accounts Card -->
+        <div class="demo-card">
+            <div class="demo-header">
+                <span>Demo Accounts</span>
+            </div>
+            <div class="demo-list">
+                <div class="demo-item">
+                    <strong>Admin</strong>
+                    <span>admin@carrental.com</span>
+                    <small>admin123</small>
+                </div>
+                <div class="demo-item">
+                    <strong>Staff</strong>
+                    <span>staff@carrental.com</span>
+                    <small>staff123</small>
+                </div>
+                <div class="demo-item">
+                    <strong>Customer</strong>
+                    <span>sokha@test.com</span>
+                    <small>cust123</small>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}

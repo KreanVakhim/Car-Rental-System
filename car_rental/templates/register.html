@@ -1,43 +1,65 @@
 {% extends "base.html" %}
+{% block title %}Register - Car Rental KH{% endblock %}
 
-{% block title %}Register - Car Rental{% endblock %}
-{% set css_file = 'auth.css' %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth-deep.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h1>Create Account</h1>
-            <p>Join us today</p>
-        </div>
-        
-        <form method="POST">
-            <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input type="text" name="name" class="form-control" required>
+
+<!-- DEEP BLACK CINEMA AUTH -->
+<section class="deep-auth">
+    <div class="deep-bg"></div>
+    <div class="deep-overlay"></div>
+    <div class="particles"></div>
+
+    <div class="container">
+        <div class="auth-box">
+            <!-- Royal Crown -->
+            <div class="crown-seal">
+                <svg viewBox="0 0 100 100" class="crown">
+                    <path d="M50 15 L60 35 L80 35 L65 50 L70 70 L50 60 L30 70 L35 50 L20 35 L40 35 Z" fill="#ffd700"/>
+                </svg>
             </div>
-            
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" name="email" class="form-control" required>
+
+            <h1 class="deep-title">JOIN THE <span class="kh">KH</span> EMPIRE</h1>
+            <p class="deep-subtitle">Become part of Cambodia's most exclusive fleet</p>
+
+            <form method="POST" class="deep-form">
+                <div class="input-group">
+                    <input type="text" name="name" required autocomplete="name">
+                    <label>Full Name</label>
+                    <i class="bi bi-person-fill"></i>
+                </div>
+
+                <div class="input-group">
+                    <input type="email" name="email" required autocomplete="email">
+                    <label>Email Address</label>
+                    <i class="bi bi-envelope-fill"></i>
+                </div>
+
+                <div class="input-group">
+                    <input type="tel" name="phone" required autocomplete="tel">
+                    <label>Phone Number</label>
+                    <i class="bi bi-phone-fill"></i>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" name="password" required autocomplete="new-password">
+                    <label>Password</label>
+                    <i class="bi bi-lock-fill"></i>
+                </div>
+
+                <button type="submit" class="deep-submit">
+                    <span>Create Royal Account</span>
+                    <div class="shine"></div>
+                </button>
+            </form>
+
+            <div class="deep-footer">
+                <p>Already a member? <a href="{{ url_for('login') }}">Sign In</a></p>
             </div>
-            
-            <div class="form-group">
-                <label class="form-label">Phone</label>
-                <input type="tel" name="phone" class="form-control" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-            
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Register</button>
-        </form>
-        
-        <div class="auth-footer">
-            <p>Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

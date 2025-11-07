@@ -2,52 +2,78 @@
 {% block title %}Manage Cars{% endblock %}
 {% block content %}
 <div class="container mt-5">
-    <h2>Manage Cars</h2>
-    <a href="{{ url_for('add_car') }}" class="btn btn-success mb-3">Add New Car</a>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Brand</th>
-                <th>Model</th>
-                <th>Year</th>
-                <th>Price/Day</th>
-                <th>Seats</th>
-                <th>Available</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for car in cars %}
-            <tr>
-                <td>
-                    {% if car.image %}
-                        {% if car.image != 'default_car.png' %}
-                            <img src="{{ url_for('uploaded_file', filename=car.image) }}" width="60" class="img-fluid" alt="{{ car.brand }} {{ car.model }}">
-                        {% else %}
-                            <img src="{{ url_for('uploaded_file', filename='default_car.png') }}" width="60" class="img-fluid" alt="Default car image">
-                        {% endif %}
-                    {% else %}
-                        <span class="text-muted">No image</span>
-                    {% endif %}
-                </td>
-                <td>{{ car.brand }}</td>
-                <td>{{ car.model }}</td>
-                <td>{{ car.year }}</td>
-                <td>${{ "%.2f"|format(car.price_day) }}</td>
-                <td>{{ car.seats }}</td>
-                <td>
-                    <span class="badge bg-{{ 'success' if car.available else 'danger' }}">
-                        {{ 'Yes' if car.available else 'No' }}
-                    </span>
-                </td>
-                <td>
-                    <a href="{{ url_for('edit_car', cid=car.id) }}" class="btn btn-primary btn-sm">Edit</a>
-                    <a href="{{ url_for('delete_car', cid=car.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Cars</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCarModal">Add New Car</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Brand / Model</th>
+                    <th>Year</th>
+                    <th>Price/Day</th>
+                    <th>Seats</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for car in cars %}
+                <tr>
+                    <td>{{ car.id }}</td>
+                    <td><img src="{{ url_for('uploaded_file', filename=car.image) }}" width="60" class="rounded"></td>
+                    <td><strong>{{ car.brand }} {{ car.model }}</strong></td>
+                    <td>{{ car.year }}</td>
+                    <td>${{ "%.2f"|format(car.price_day) }}</td>
+                    <td>{{ car.seats }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if car.available else 'secondary' }}">
+                            {{ 'Available' if car.available else 'Booked' }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="car_id" value="{{ car.id }}">
+                            <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this car?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Car Modal -->
+<div class="modal fade" id="addCarModal">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Car</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="add">
+                    <div class="row g-3">
+                        <div class="col-md-6"><input type="text" name="brand" class="form-control" placeholder="Brand" required></div>
+                        <div class="col-md-6"><input type="text" name="model" class="form-control" placeholder="Model" required></div>
+                        <div class="col-md-4"><input type="number" name="year" class="form-control" min="2000" max="2030" required></div>
+                        <div class="col-md-4"><input type="number" step="0.01" name="price_day" class="form-control" placeholder="Price / day" required></div>
+                        <div class="col-md-4"><input type="number" name="seats" class="form-control" min="2" max="8" required></div>
+                        <div class="col-12"><input type="file" name="image" class="form-control" accept="image/*"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save Car</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

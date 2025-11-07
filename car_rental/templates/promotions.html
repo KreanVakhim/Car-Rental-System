@@ -1,31 +1,202 @@
 {% extends "base.html" %}
-{% block title %}Promotions{% endblock %}
+{% block title %}Promotions - Car Rental KH{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <h2 class="mb-4">Active Promotions</h2>
+<br><br><br>
 
-    {% if promotions %}
-        <div class="row">
-            {% for p in promotions %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-primary">{{ p.code }}</h5>
-                        <p class="display-6 fw-bold text-success">{{ p.discount_pct }}% OFF</p>
-                        <p class="text-muted">
-                            Valid: {{ p.valid_from.strftime('%b %d') }} to {{ p.valid_to.strftime('%b %d, %Y') }}
-                        </p>
-                        <small class="text-secondary">Use code at checkout</small>
+<!-- FULL-SCREEN ROYAL PROMOTIONS HERO -->
+<section class="hero-section promo-hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <div class="promo-badge">
+            <i class="bi bi-stars"></i>
+            <span>LIMITED TIME</span>
+        </div>
+        <h1 class="display-4 fw-black">Royal Promotions</h1>
+        <p class="lead">Exclusive offers for the Kingdom's travelers</p>
+        <div class="hero-countdown">
+            <div class="countdown-item">
+                <span id="days">00</span>
+                <small>Days</small>
+            </div>
+            <div class="countdown-item">
+                <span id="hours">00</span>
+                <small>Hours</small>
+            </div>
+            <div class="countdown-item">
+                <span id="minutes">00</span>
+                <small>Minutes</small>
+            </div>
+            <div class="countdown-item">
+                <span id="seconds">00</span>
+                <small>Seconds</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-xxl-11">
+
+            <!-- PROMOTIONS GRID -->
+            {% if promos %}
+            <div class="row g-5">
+                {% for p in promos %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="promo-card-3d" data-end="{{ p.valid_to.strftime('%Y-%m-%d %H:%M:%S') }}">
+                        <div class="card-inner">
+                            <!-- Card Front -->
+                            <div class="card-front">
+                                <div class="promo-header">
+                                    <div class="discount-badge">
+                                        <span class="discount-value">{{ p.discount_pct }}%</span>
+                                        <span class="off">OFF</span>
+                                    </div>
+                                    <div class="promo-type">
+                                        {{ "EARLY BIRD" if "early" in p.code|lower else "FLASH SALE" if "flash" in p.code|lower else "ROYAL DEAL" }}
+                                    </div>
+                                </div>
+
+                                <div class="promo-body">
+                                    <h3 class="promo-code">{{ p.code }}</h3>
+                                    <p class="promo-desc">
+                                        {% if p.description %}
+                                            {{ p.description }}
+                                        {% else %}
+                                            Limited time offer • Book any car and save big!
+                                        {% endif %}
+                                    </p>
+
+                                    <div class="valid-dates">
+                                        <div class="date-item">
+                                            <i class="bi bi-calendar3"></i>
+                                            <span>{{ p.valid_from|date("d MMM") }}</span>
+                                        </div>
+                                        <div class="date-item">
+                                            <i class="bi bi-arrow-right"></i>
+                                        </div>
+                                        <div class="date-item">
+                                            <i class="bi bi-calendar-check"></i>
+                                            <span>{{ p.valid_to|date("d MMM yyyy") }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="countdown-mini" data-end="{{ p.valid_to.strftime('%Y-%m-%d %H:%M:%S') }}">
+                                        <span class="time-left">Ends in <strong>00:00:00</strong></span>
+                                    </div>
+                                </div>
+
+                                <div class="promo-footer">
+                                    <a href="{{ url_for('cars_list') }}" class="btn btn-gold-3d">
+                                        <span>Book Now & Save</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Card Back (Hover) -->
+                            <div class="card-back">
+                                <div class="back-content">
+                                    <h4>How to Use</h4>
+                                    <ol>
+                                        <li>Browse our luxury fleet</li>
+                                        <li>Select your dates</li>
+                                        <li>Enter code: <strong>{{ p.code }}</strong></li>
+                                        <li>Watch the price drop!</li>
+                                    </ol>
+                                    <p class="terms">* Valid for new bookings only. Cannot be combined with other offers.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            {% else %}
+            <div class="no-promo-state">
+                <div class="empty-icon">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+                <h3>No Active Promotions</h3>
+                <p class="text-muted">The royal treasury is preparing something magnificent...</p>
+                <a href="{{ url_for('cars_list') }}" class="btn btn-outline-gold btn-lg">
+                    Browse All Cars
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- SUBSCRIBE FOR ALERTS -->
+            <div class="subscribe-section mt-6">
+                <div class="subscribe-card">
+                    <div class="subscribe-icon">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <div class="subscribe-content">
+                        <h4>Never Miss a Royal Deal</h4>
+                        <p>Get exclusive promotions delivered to your inbox</p>
+                    </div>
+                    <form class="subscribe-form" action="{{ url_for('subscribe_promo') }}" method="POST">
+                        <input type="email" placeholder="your@email.com" required>
+                        <button type="submit" class="btn btn-gold">
+                            Subscribe
+                        </button>
+                    </form>
+                </div>
+            </div>
+
         </div>
-    {% else %}
-        <div class="alert alert-info text-center">
-            No active promotions right now.
-        </div>
-    {% endif %}
-</div>
+    </div>
+</main>
+
+<!-- COUNTDOWN SCRIPT -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Main hero countdown (to next promotion end date)
+    const now = new Date().getTime();
+    const nextEnd = Math.max(...Array.from(document.querySelectorAll('[data-end]'))
+        .map(el => new Date(el.dataset.end).getTime()));
+    
+    if (nextEnd > now) {
+        const countdown = setInterval(() => {
+            const distance = nextEnd - new Date().getTime();
+            if (distance < 0) {
+                clearInterval(countdown);
+                document.querySelector('.hero-countdown').innerHTML = '<span class="expired">Promotion Ended</span>';
+                return;
+            }
+            
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            document.getElementById('days').textContent = days.toString().padStart(2, '0');
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        }, 1000);
+    }
+
+    // Mini countdowns on each card
+    document.querySelectorAll('.countdown-mini').forEach(el => {
+        const end = new Date(el.dataset.end).getTime();
+        const update = () => {
+            const distance = end - new Date().getTime();
+            if (distance < 0) {
+                el.innerHTML = '<span class="expired">Expired</span>';
+                el.closest('.promo-card-3d').classList.add('expired');
+                return;
+            }
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            el.querySelector('strong').textContent = 
+                `${days}d ${hours}h ${minutes}m`;
+        };
+        update();
+        setInterval(update, 60000); // Update every minute
+    });
+});
+</script>
 {% endblock %}

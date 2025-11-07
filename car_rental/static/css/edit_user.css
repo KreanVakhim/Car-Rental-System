@@ -1,5 +1,0 @@
-/* edit_user.css — admin edit user placeholder */
-@import url("base.css");
-
-.edit-user{max-width:700px;margin:18px auto;padding:12px}
-.edit-user input, .edit-user select{display:block;width:100%;margin:8px 0}

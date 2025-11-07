@@ -1,59 +1,56 @@
 {% extends "base.html" %}
-
-{% block title %}Manage Users - Admin{% endblock %}
-
+{% block title %}Manage Users{% endblock %}
 {% block content %}
-<div class="container" style="padding: 40px 0;">
-    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 30px;">
-        <h1>Manage Users</h1>
-        <div style="display: flex; gap: 15px;">
-            <a href="{{ url_for('add_user') }}" class="btn btn-primary">Add User</a>
-            <a href="{{ url_for('add_staff') }}" class="btn btn-warning">Add Staff</a>
-        </div>
+<div class="container mt-5">
+    <h2>Manage Users</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><img src="{{ url_for('profile_pic', filename=user.profile_pic) }}" width="40" class="rounded-circle"></td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                            <span class="badge bg-danger">Admin</span>
+                        {% else %}
+                            <form method="POST" class="d-inline">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="hidden" name="action" value="role">
+                                <select name="new_role" onchange="this.form.submit()" class="form-select form-select-sm">
+                                    <option value="customer" {{ 'selected' if user.role == 'customer' }}>Customer</option>
+                                    <option value="staff" {{ 'selected' if user.role == 'staff' }}>Staff</option>
+                                </select>
+                            </form>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.role != 'admin' %}
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <input type="hidden" name="action" value="delete">
+                            <button class="btn btn-danger btn-sm" onclick="return confirm('Delete user?')">Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    
-    {% if users %}
-    <div class="form-section">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.name }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.phone }}</td>
-                        <td>
-                            <span class="status-badge {% if user.role == 'admin' %}status-active{% elif user.role == 'staff' %}status-confirmed{% else %}status-pending{% endif %}">
-                                {{ user.role|title }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{{ url_for('edit_user', uid=user.id) }}" class="btn btn-sm btn-primary">Edit</a>
-                            {% if user.id != session.get('user_id') %}
-                            <a href="{{ url_for('confirm_delete_user', uid=user.id) }}" class="btn btn-sm btn-danger">Delete</a>
-                            {% else %}
-                            <button class="btn btn-sm btn-secondary" disabled>Current User</button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% else %}
-    <div class="text-center">
-        <p>No users found.</p>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

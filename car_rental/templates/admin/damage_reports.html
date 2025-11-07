@@ -1,39 +1,92 @@
 {% extends "base.html" %}
+{% block title %}Damage Reports - Admin{% endblock %}
+
 {% block content %}
-<h2>Damage Reports</h2>
-<table class="table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Car</th>
-            <th>Staff</th>
-            <th>Description</th>
-            <th>Reported At</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for r in reports %}
-        <tr>
-            <td>{{ r.id }}</td>
-            <td>{{ r.brand }} {{ r.model }}</td>
-            <td>{{ r.staff_name }}</td>
-            <td>{{ r.description }}</td>
-            <td>{{ r.reported_at|date }}</td>
-            <td>{{ r.status|capitalize }}</td>
-            <td>
-                {% if r.status == 'pending' %}
-                    <form method="POST" action="{{ url_for('review_damage', report_id=r.id, action='approve') }}" class="d-inline">
-                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                    </form>
-                    <form method="POST" action="{{ url_for('review_damage', report_id=r.id, action='reject') }}" class="d-inline">
-                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                    </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<section class="hero-fullscreen" style="background: linear-gradient(135deg, #7c3aed, #a78bfa); height: 50vh;">
+    <div class="hero-overlay" style="background: rgba(30,27,75,.9);"></div>
+    <div class="hero-content text-center">
+        <h1 class="display-2 fw-bold text-white">Damage Reports</h1>
+        <p class="lead text-white opacity-90">Admin Review Center</p>
+    </div>
+</section>
+
+<main class="container py-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show rounded-3 shadow-sm">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
+        <div class="card-header text-white py-4" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
+            <h4 class="mb-0 fw-bold d-flex align-items-center gap-3">
+                Damage Reports
+            </h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Car</th>
+                            <th>Staff</th>
+                            <th>Description</th>
+                            <th>Reported</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if reports %}
+                            {% for r in reports %}
+                            <tr>
+                                <td><strong>#{{ r.id }}</strong></td>
+                                <td>{{ r.brand }} {{ r.model }}</td>
+                                <td>{{ r.staff_name }}</td>
+                                <td>{{ r.description[:80] }}{% if r.description|length > 80 %}...{% endif %}</td>
+                                <td>{{ r.reported_at|date('M d, Y') }}</td>
+                                <td>
+                                    <span class="badge px-3 py-2 rounded-pill
+                                        {% if r.status == 'pending' %}bg-warning text-dark
+                                        {% elif r.status == 'approved' %}bg-success
+                                        {% elif r.status == 'rejected' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ r.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if r.status == 'pending' %}
+                                    <div class="btn-group" role="group">
+                                        <form method="POST" action="{{ url_for('review_damage', report_id=r.id, action='approve') }}" class="d-inline">
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('review_damage', report_id=r.id, action='reject') }}" class="d-inline">
+                                            <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                        </form>
+                                    </div>
+                                    {% else %}
+                                        <span class="text-muted small">Done</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <p>No damage reports</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
 {% endblock %}

@@ -1,6 +1,0 @@
-/* cancel_booking.css — styles for cancel booking page */
-@import url("base.css");
-
-.cancel-container{max-width:800px;margin:20px auto;padding:16px;text-align:center}
-.cancel-container h2{color:#b00}
-.cancel-container .btn{padding:10px 18px;border-radius:6px}

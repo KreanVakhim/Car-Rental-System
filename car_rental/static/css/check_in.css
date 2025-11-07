@@ -1,5 +1,0 @@
-/* check_in.css — staff check-in page placeholder */
-@import url("base.css");
-
-.check-in{max-width:1000px;margin:20px auto;padding:16px}
-.check-in .form-row{display:flex;gap:12px}

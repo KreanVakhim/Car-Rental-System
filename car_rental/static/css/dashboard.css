@@ -1,5 +1,0 @@
-/* dashboard.css — generic admin dashboard placeholder (if different from admin_dashboard.css) */
-@import url("base.css");
-
-.dashboard{padding:20px}
-.dashboard .summary{display:flex;gap:12px;flex-wrap:wrap}

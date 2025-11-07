@@ -1,5 +1,0 @@
-/* add_staff.css — placeholder styles for Add Staff (admin) */
-@import url("base.css");
-
-.add-staff{max-width:700px;margin:20px auto;padding:12px}
-.add-staff input, .add-staff button{display:block;width:100%;margin:8px 0}
