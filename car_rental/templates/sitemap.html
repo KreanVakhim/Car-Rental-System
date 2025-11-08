@@ -2,7 +2,7 @@
 {% block title %}Sitemap - Car Rental KH{% endblock %}
 
 {% block content %}
-<br><br><br><br>
+<br><br>
 
 <!-- FULL-SCREEN IMPERIAL SITEMAP HERO -->
 <section class="hero-section">
@@ -10,8 +10,8 @@
         <h1 class="display-5 fw-bold">Sitemap</h1>
         <p class="lead">Explore every corner of the Royal Fleet</p>
         <div class="sitemap-meta">
-            <span class="meta-item">Total Pages: <strong>{{ total_pages }}</strong></span>
-            <span class="meta-item">Last Updated: <strong>November 07, 2025</strong></span>
+            <span class="meta-item">Total Pages: <strong>{{ total_pages|default(20) }}</strong></span>
+            <span class="meta-item">Last Updated: <strong>November 08, 2025</strong></span>
         </div>
     </div>
 </section>
@@ -71,7 +71,8 @@
                             <li><a href="{{ url_for('staff_dashboard') }}">Staff Dashboard</a></li>
                             <li><a href="{{ url_for('my_damage_reports') }}">My Damage Reports</a></li>
                             <li><a href="{{ url_for('rental_history') }}">Rental History</a></li>
-                            <li><a href="{{ url_for('report_damage', car_id=1) }}">Report Damage</a></li>
+                            <!-- Optional: Remove car_id=1 if not needed -->
+                            <li><a href="{{ url_for('cars_list') }}">Report Damage (from Cars)</a></li>
                         </ul>
                     </div>
                     {% endif %}
@@ -84,12 +85,13 @@
                         </h3>
                         <ul class="sitemap-list">
                             <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
-                            <li><a href="{{ url_for('admin.manage_cars') }}">Manage Cars</a></li>
-                            <li><a href="{{ url_for('admin.manage_users') }}">Manage Users</a></li>
-                            <li><a href="{{ url_for('admin.manage_promotions') }}">Manage Promotions</a></li>
-                            <li><a href="{{ url_for('admin.manage_bookings') }}">All Bookings</a></li>
-                            <li><a href="{{ url_for('admin.damage_reports') }}">Damage Reports</a></li>
-                            <li><a href="{{ url_for('admin.revenue_report') }}">Revenue Analytics</a></li>
+                            <li><a href="{{ url_for('admin_manage_cars') }}">Manage Cars</a></li>
+                            <li><a href="{{ url_for('admin_manage_users') }}">Manage Users</a></li>
+                            <li><a href="{{ url_for('admin_manage_promotions') }}">Manage Promotions</a></li>
+                            <li><a href="{{ url_for('admin_manage_bookings') }}">All Bookings</a></li>
+                            <li><a href="{{ url_for('damage_reports') }}">Damage Reports</a></li>
+                            <!-- Optional: Add revenue_report later -->
+                            <li><a href="#" class="text-muted">Revenue Analytics (Coming Soon)</a></li>
                         </ul>
                     </div>
                     {% endif %}
@@ -104,7 +106,7 @@
                             <strong>XML Sitemap for Search Engines</strong>
                             <p class="mb-0">
                                 <a href="{{ url_for('static', filename='sitemap.xml') }}" target="_blank">
-                                    https://carrentalkh.com/sitemap.xml
+                                    /static/sitemap.xml
                                 </a>
                             </p>
                         </div>

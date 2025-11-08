@@ -1,0 +1,245 @@
+/* ── DAMAGE-PEARL.CSS – 2025 PEARL WHITE • CALM PROFESSIONAL LUXURY ── */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+.damage-hero {
+    position: relative;
+    height: 48vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    overflow: hidden;
+}
+
+.hero-bg {
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1544636331-90447b2eef951?auto=format&fit=crop&q=80') center/cover;
+    filter: brightness(0.9) contrast(1.1);
+    opacity: 0.7;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.98));
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.alert-icon {
+    font-size: 4.5rem;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.hero-content h1 {
+    font-size: 3.8rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 0.8rem;
+    letter-spacing: -1.5px;
+}
+
+.car-name {
+    font-size: 1.7rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+/* Clean Alerts */
+.alert-modern {
+    padding: 1.2rem 1.8rem;
+    border-radius: 18px;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    border-left: 5px solid;
+}
+
+.alert-success { background: #f0fdf4; color: #166534; border-color: #22c55e; }
+.alert-danger   { background: #fef2f2; color: #991b1b; border-color: #ef4444; }
+
+/* Pearl Glass Card */
+.damage-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    border-radius: 28px 28px 0 0;
+}
+
+.card-header h2 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem;
+}
+
+.card-header p {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+/* Info Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.8rem;
+    margin: 2.5rem;
+}
+
+.info-box {
+    background: #f8fafc;
+    padding: 1.6rem;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.info-box label {
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+}
+
+.info-value {
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.id-tag {
+    background: #1e293b;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+/* Form */
+.damage-form {
+    padding: 0 2.5rem 2.5rem;
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-group label {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin-bottom: 0.8rem;
+}
+
+.req { color: #dc2626; }
+.optional { color: #64748b; font-size: 0.9rem; }
+
+textarea {
+    width: 100%;
+    padding: 1.3rem;
+    border-radius: 18px;
+    border: 2px solid #cbd5e1;
+    background: white;
+    color: #0f172a;
+    font-size: 1.05rem;
+    transition: all 0.3s;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #1e293b;
+    box-shadow: 0 0 0 4px rgba(30,41,59,0.1);
+}
+
+/* Upload */
+.upload-area {
+    height: 220px;
+    border: 2px dashed #94a3b8;
+    border-radius: 22px;
+    background: #f8fafc;
+    transition: all 0.3s;
+}
+
+.upload-area:hover {
+    border-color: #1e293b;
+    background: #f1f5f9;
+}
+
+.upload-placeholder {
+    color: #64748b;
+}
+
+.upload-placeholder i {
+    font-size: 3.5rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+}
+
+.upload-placeholder p {
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.upload-placeholder small {
+    color: #94a3b8;
+}
+
+/* Buttons */
+.action-buttons {
+    margin-top: 2.5rem;
+    gap: 1.2rem;
+}
+
+.btn-submit, .btn-back {
+    padding: 1rem 2.8rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.btn-submit {
+    background: #1e293b;
+    color: white;
+    border: none;
+}
+
+.btn-submit:hover {
+    background: #0f172a;
+    transform: translateY(-2px);
+}
+
+.btn-back {
+    background: white;
+    color: #1e293b;
+    border: 2px solid #1e293b;
+}
+
+.btn-back:hover {
+    background: #1e293b;
+    color: white;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .damage-hero { height: 40vh; }
+    .hero-content h1 { font-size: 2.8rem; }
+    .info-grid { grid-template-columns: 1fr; }
+    .action-buttons { flex-direction: column; }
+    .btn-submit, .btn-back { width: 100%; }
+} 
