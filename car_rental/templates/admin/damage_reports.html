@@ -1,45 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Damage Reports{% endblock %}
-
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-royal.css') }}">
-{% endblock %}
+{% block title %}Damage Reports - Admin{% endblock %}
 
 {% block content %}
-<section class="hero-fullscreen">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-        <h1 class="display-2 fw-bold">Damage Reports</h1>
-        <p class="lead">Fleet Safety & Maintenance</p>
+<br><br><br><br><br><br>
+<section class="hero-fullscreen" style="background: linear-gradient(135deg, #7c3aed, #a78bfa); height: 50vh;">
+    <div class="hero-overlay" style="background: rgba(30,27,75,.9);"></div>
+    <div class="hero-content text-center">
+        <h1 class="display-2 fw-bold text-white">Damage Reports</h1>
+        <p class="lead text-white opacity-90">Admin Review Center</p>
     </div>
 </section>
 
 <main class="container py-5">
-    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
-            <strong>{{ category|title }}:</strong> {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show rounded-3 shadow-sm">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
     {% endwith %}
 
-    <!-- Back Button -->
-    <div class="mb-4">
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
-
-    <!-- Damage Reports Table -->
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-gradient text-white">
-            <h5 class="mb-0 fw-bold">
-                <i class="bi bi-exclamation-triangle-fill"></i> All Damage Reports
-            </h5>
+    <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
+        <div class="card-header text-white py-4" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
+            <h4 class="mb-0 fw-bold d-flex align-items-center gap-3">
+                Damage Reports
+            </h4>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -48,74 +36,51 @@
                         <tr>
                             <th>ID</th>
                             <th>Car</th>
-                            <th>Reported By</th>
+                            <th>Staff</th>
                             <th>Description</th>
-                            <th>Image</th>
+                            <th>Reported</th>
                             <th>Status</th>
-                            <th>Reported At</th>
-                            <th>Actions</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if reports %}
                             {% for r in reports %}
                             <tr>
-                                <td class="fw-bold">#{{ r.id }}</td>
+                                <td><strong>#{{ r.id }}</strong></td>
+                                <td>{{ r.brand }} {{ r.model }}</td>
+                                <td>{{ r.staff_name }}</td>
+                                <td>{{ r.description[:80] }}{% if r.description|length > 80 %}...{% endif %}</td>
+                                <td>{{ r.reported_at|date('M d, Y') }}</td>
                                 <td>
-                                    <strong>{{ r.car.make }} {{ r.car.model }}</strong><br>
-                                    <small class="text-muted">License: {{ r.car.license_plate }}</small>
-                                </td>
-                                <td>
-                                    {{ r.reporter.name }}<br>
-                                    <small class="text-muted">({{ r.reporter.role|title }})</small>
-                                </td>
-                                <td>{{ r.description[:60] }}{% if r.description|length > 60 %}...{% endif %}</td>
-                                <td>
-                                    {% if r.image %}
-                                        <a href="{{ url_for('damage_image', filename=r.image) }}" target="_blank">
-                                            <img src="{{ url_for('damage_image', filename=r.image) }}" 
-                                                 class="img-thumbnail" style="width:60px; height:60px; object-fit:cover;">
-                                        </a>
-                                    {% else %}
-                                        <span class="text-muted">No image</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{
-                                        'success' if r.status == 'approved' else
-                                        'danger' if r.status == 'rejected' else
-                                        'warning'
-                                    }} text-capitalize">
-                                        {{ r.status }}
+                                    <span class="badge px-3 py-2 rounded-pill
+                                        {% if r.status == 'pending' %}bg-warning text-dark
+                                        {% elif r.status == 'approved' %}bg-success
+                                        {% elif r.status == 'rejected' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ r.status|title }}
                                     </span>
                                 </td>
                                 <td>
-                                    <small>{{ r.reported_at|date('d/m/Y H:i') }}</small>
-                                </td>
-                                <td>
                                     {% if r.status == 'pending' %}
-                                        <form method="POST" class="d-inline">
-                                            <input type="hidden" name="report_id" value="{{ r.id }}">
-                                            <button type="submit" name="action" value="approve" 
-                                                    class="btn btn-success btn-sm" title="Approve">
-                                                <i class="bi bi-check-lg"></i>
-                                            </button>
-                                            <button type="submit" name="action" value="reject" 
-                                                    class="btn btn-danger btn-sm" title="Reject">
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
+                                    <div class="btn-group" role="group">
+                                        <form method="POST" action="{{ url_for('review_damage', report_id=r.id, action='approve') }}" class="d-inline">
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
                                         </form>
+                                        <form method="POST" action="{{ url_for('review_damage', report_id=r.id, action='reject') }}" class="d-inline">
+                                            <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                        </form>
+                                    </div>
                                     {% else %}
-                                        <span class="text-muted">—</span>
+                                        <span class="text-muted small">Done</span>
                                     {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
-                                    <i class="bi bi-shield-check fs-1"></i><br>
-                                    No damage reports found.
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <p>No damage reports</p>
                                 </td>
                             </tr>
                         {% endif %}

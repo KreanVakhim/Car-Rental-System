@@ -1,48 +1,42 @@
-{% extends "base.html" %}
-{% block title %}Book {{ car.brand }} {{ car.model }}{% endblock %}
+@app.route('/book/<int:cid>', methods=['GET', 'POST'])
+def book_car(cid):
+    if session.get('role') != 'customer':
+        flash('Login as customer', 'warning')
+        return redirect('/login')
+    update_car_availability()
+    car = query("SELECT * FROM cars WHERE id=%s AND available=TRUE", (cid,), fetchone=True)
+    if not car:
+        return redirect('/cars')
+    
+    # Fetch active promotions
+    promos = query(
+        "SELECT * FROM promotions WHERE valid_from <= %s AND valid_to >= %s",
+        (date.today(), date.today()), fetchall=True
+    ) or []
 
-{% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-md-6">
-            <img src="{{ url_for('uploaded_file', filename=car.image) }}" class="img-fluid rounded shadow" alt="{{ car.brand }}">
-        </div>
-        <div class="col-md-6">
-            <h2>Book <strong>{{ car.brand }} {{ car.model }}</strong></h2>
-            <p class="lead">Price: <strong>${{ car.price_day }}/day</strong></p>
+    if request.method == 'POST':
+        s = request.form['start_date']
+        e = request.form['end_date']
+        days = (datetime.strptime(e, '%Y-%m-%d').date() - datetime.strptime(s, '%Y-%m-%d').date()).days + 1
+        total = car['price_day'] * days
 
-            <form method="POST">
-                <div class="mb-3">
-                    <label>Start Date</label>
-                    <input type="date" name="start_date" class="form-control" min="{{ min_date }}" required>
-                </div>
-                <div class="mb-3">
-                    <label>End Date</label>
-                    <input type="date" name="end_date" class="form-control" min="{{ min_date }}" required>
-                </div>
-                <div class="mb-3">
-                    <label>Promo Code (Optional)</label>
-                    <input type="text" name="promo_code" class="form-control" placeholder="e.g. WELCOME20">
-                </div>
-                <button type="submit" class="btn btn-primary btn-lg">Proceed to Payment</button>
-            </form>
+        promo_code = request.form.get('promo_code', '').strip()
+        discount = 0
+        if promo_code:
+            promo = query(
+                "SELECT * FROM promotions WHERE code=%s AND valid_from <= %s AND valid_to >= %s",
+                (promo_code, date.today(), date.today()), fetchone=True
+            )
+            if promo:
+                discount = total * (promo['discount_pct'] / 100)
+                total -= discount
 
-            {% if promotions %}
-            <div class="mt-4">
-                <h5>Active Promotions</h5>
-                <ul class="list-group">
-                    {% for p in promotions %}
-                    <li class="list-group-item">
-                        <strong>{{ p.code }}</strong> → {{ p.discount_pct }}% OFF
-                        <small class="text-muted d-block">
-                            Valid: {{ p.valid_from|date('d/m') }} → {{ p.valid_to|date('d/m') }}
-                        </small>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-{% endblock %}
+        bid = query(
+            "INSERT INTO bookings (user_id,car_id,start_date,end_date,total,discount,promo_code,status) VALUES (%s,%s,%s,%s,%s,%s,%s,'pending')",
+            (session['user_id'], cid, s, e, total, discount, promo_code if discount > 0 else None), commit=True
+        )
+        query("UPDATE cars SET available=FALSE WHERE id=%s", (cid,), commit=True)
+        flash('Booking created!', 'success')
+        return redirect(url_for('payment', booking_id=bid))
+    
+    return render_template('book.html', car=car, min_date=date.today().strftime('%Y-%m-%d'), promotions=promos)

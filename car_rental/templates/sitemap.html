@@ -2,16 +2,15 @@
 {% block title %}Sitemap - Car Rental KH{% endblock %}
 
 {% block content %}
-<br><br>
+<br><br><br><br>
 
-<!-- FULL-SCREEN IMPERIAL SITEMAP HERO -->
 <section class="hero-section">
     <div class="hero-content">
         <h1 class="display-5 fw-bold">Sitemap</h1>
         <p class="lead">Explore every corner of the Royal Fleet</p>
         <div class="sitemap-meta">
-            <span class="meta-item">Total Pages: <strong>{{ total_pages|default(20) }}</strong></span>
-            <span class="meta-item">Last Updated: <strong>November 08, 2025</strong></span>
+            <span class="meta-item">Total Pages: <strong>{{ total_pages }}</strong></span>
+            <span class="meta-item">Last Updated: <strong>November 09, 2025</strong></span>
         </div>
     </div>
 </section>
@@ -20,8 +19,6 @@
 <main class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10 col-xxl-9">
-
-            <!-- SITEMAP IMPERIAL CARD -->
             <div class="sitemap-card">
                 <div class="sitemap-header">
                     <h2>Navigation Map of Car Rental KH</h2>
@@ -29,12 +26,8 @@
                 </div>
 
                 <div class="sitemap-grid">
-
-                    <!-- PUBLIC PAGES -->
                     <div class="sitemap-column">
-                        <h3 class="column-title public">
-                            Public Access
-                        </h3>
+                        <h3 class="column-title public">Public Access</h3>
                         <ul class="sitemap-list">
                             <li><a href="{{ url_for('index') }}">Home</a></li>
                             <li><a href="{{ url_for('cars_list') }}">Cars</a></li>
@@ -47,12 +40,9 @@
                         </ul>
                     </div>
 
-                    <!-- CUSTOMER PAGES -->
                     {% if session.user_id and session.role == 'customer' %}
                     <div class="sitemap-column">
-                        <h3 class="column-title customer">
-                            My Account
-                        </h3>
+                        <h3 class="column-title customer">My Account</h3>
                         <ul class="sitemap-list">
                             <li><a href="{{ url_for('my_bookings') }}">My Bookings</a></li>
                             <li><a href="{{ url_for('profile') }}">Profile</a></li>
@@ -61,28 +51,25 @@
                     </div>
                     {% endif %}
 
-                    <!-- STAFF PAGES -->
                     {% if session.role == 'staff' %}
                     <div class="sitemap-column">
-                        <h3 class="column-title staff">
-                            Staff Portal
-                        </h3>
+                        <h3 class="column-title staff">Staff Portal</h3>
                         <ul class="sitemap-list">
                             <li><a href="{{ url_for('staff_dashboard') }}">Staff Dashboard</a></li>
                             <li><a href="{{ url_for('my_damage_reports') }}">My Damage Reports</a></li>
                             <li><a href="{{ url_for('rental_history') }}">Rental History</a></li>
-                            <!-- Optional: Remove car_id=1 if not needed -->
-                            <li><a href="{{ url_for('cars_list') }}">Report Damage (from Cars)</a></li>
+                            {% if first_car_id %}
+                            <li><a href="{{ url_for('report_damage', car_id=first_car_id) }}">Report Damage</a></li>
+                            {% else %}
+                            <li><span class="text-muted">Report Damage (No cars yet)</span></li>
+                            {% endif %}
                         </ul>
                     </div>
                     {% endif %}
 
-                    <!-- ADMIN PAGES -->
                     {% if session.role == 'admin' %}
                     <div class="sitemap-column">
-                        <h3 class="column-title admin">
-                            Admin Kingdom
-                        </h3>
+                        <h3 class="column-title admin">Admin Kingdom</h3>
                         <ul class="sitemap-list">
                             <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
                             <li><a href="{{ url_for('admin_manage_cars') }}">Manage Cars</a></li>
@@ -90,15 +77,11 @@
                             <li><a href="{{ url_for('admin_manage_promotions') }}">Manage Promotions</a></li>
                             <li><a href="{{ url_for('admin_manage_bookings') }}">All Bookings</a></li>
                             <li><a href="{{ url_for('damage_reports') }}">Damage Reports</a></li>
-                            <!-- Optional: Add revenue_report later -->
-                            <li><a href="#" class="text-muted">Revenue Analytics (Coming Soon)</a></li>
                         </ul>
                     </div>
                     {% endif %}
-
                 </div>
 
-                <!-- XML SITEMAP LINK -->
                 <div class="sitemap-footer">
                     <div class="xml-sitemap">
                         <i class="bi bi-sitemap"></i>
@@ -123,16 +106,13 @@
                         </div>
                     </div>
                 </div>
-
             </div>
 
-            <!-- FUN FACT -->
             <div class="fun-fact text-center mt-5">
                 <p class="text-muted">
                     <em>Did you know? This sitemap was designed with royal purple ink in the year 2025.</em>
                 </p>
             </div>
-
         </div>
     </div>
 </main>

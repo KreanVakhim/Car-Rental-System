@@ -1,93 +1,57 @@
 {% extends "base.html" %}
 {% block title %}Manage Users{% endblock %}
 {% block content %}
-<div class="container mt-5 pt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Manage Users</h2>
-        <span class="badge bg-primary fs-6">{{ users|length }} Total</span>
-    </div>
-
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for cat, msg in messages %}
-                <div class="alert alert-{{ 'success' if cat=='success' else 'danger' }} alert-dismissible fade show">
-                    {{ msg }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0 align-middle">
-                    <thead class="table-primary">
-                        <tr>
-                            <th>ID</th>
-                            <th>Photo</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Role</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if users %}
-                            {% for user in users %}
-                            <tr>
-                                <td>{{ user.id }}</td>
-                                <td>
-                                    <img src="{{ url_for('profile_pic', filename=user.profile_pic) }}"
-                                         width="40" height="40" class="rounded-circle object-fit-cover">
-                                </td>
-                                <td><strong>{{ user.name }}</strong></td>
-                                <td>{{ user.email }}</td>
-                                <td>{{ user.phone }}</td>
-                                <td>
-                                    {% if user.role == 'admin' %}
-                                        <span class="badge bg-danger">Admin</span>
-                                    {% else %}
-                                        <form method="POST" class="d-inline">
-                                            <input type="hidden" name="user_id" value="{{ user.id }}">
-                                            <input type="hidden" name="action" value="role">
-                                            <select name="new_role" onchange="this.form.submit()"
-                                                    class="form-select form-select-sm w-auto d-inline">
-                                                <option value="customer" {{ 'selected' if user.role == 'customer' }}>Customer</option>
-                                                <option value="staff" {{ 'selected' if user.role == 'staff' }}>Staff</option>
-                                            </select>
-                                        </form>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">
-                                    {% if user.role != 'admin' %}
-                                        <form method="POST" class="d-inline"
-                                              onsubmit="return confirm('Delete {{ user.name }}?');">
-                                            <input type="hidden" name="user_id" value="{{ user.id }}">
-                                            <input type="hidden" name="action" value="delete">
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
+<br><br><br>
+<div class="container mt-5">
+    <h2>Manage Users</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><img src="{{ url_for('profile_pic', filename=user.profile_pic) }}" width="40" class="rounded-circle"></td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                            <span class="badge bg-danger">Admin</span>
                         {% else %}
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
-                                    No users found.
-                                </td>
-                            </tr>
+                            <form method="POST" class="d-inline">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="hidden" name="action" value="role">
+                                <select name="new_role" onchange="this.form.submit()" class="form-select form-select-sm">
+                                    <option value="customer" {{ 'selected' if user.role == 'customer' }}>Customer</option>
+                                    <option value="staff" {{ 'selected' if user.role == 'staff' }}>Staff</option>
+                                </select>
+                            </form>
                         {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    </td>
+                    <td>
+                        {% if user.role != 'admin' %}
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <input type="hidden" name="action" value="delete">
+                            <button class="btn btn-danger btn-sm" onclick="return confirm('Delete user?')">Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

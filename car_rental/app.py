@@ -5,10 +5,8 @@ from flask import (
 from datetime import datetime, date, timedelta
 import os
 import mysql.connector
-from mysql.connector import Error, FieldType
+from mysql.connector import Error
 from werkzeug.utils import secure_filename
-from decimal import Decimal
-from PIL import Image, ImageDraw, ImageFont
 
 app = Flask(__name__)
 app.secret_key = 'car_rental_kh_2025_secret'
@@ -47,38 +45,13 @@ ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXT
 
-# ------------------- DEFAULT IMAGE GENERATOR -------------------
-def create_placeholder_image(filepath):
-    try:
-        img = Image.new('RGB', (800, 600), color='#f8f9fa')
-        draw = ImageDraw.Draw(img)
-        draw.rectangle([100, 200, 700, 400], fill='#6c757d', outline='#495057', width=3)
-        draw.ellipse([150, 350, 250, 450], fill='#343a40')
-        draw.ellipse([550, 350, 650, 450], fill='#343a40')
-        try:
-            font = ImageFont.truetype("arial.ttf", 48)
-            small_font = ImageFont.truetype("arial.ttf", 32)
-        except:
-            font = ImageFont.load_default()
-            small_font = ImageFont.load_default()
-        draw.text((400, 100), "Car Rental KH", fill='#212529', font=font, anchor="mm")
-        draw.text((400, 500), "No Image", fill='#6c757d', font=small_font, anchor="mm")
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        img.save(filepath, 'PNG')
-        print(f"Default image created: {filepath}")
-    except Exception as e:
-        print(f"Failed to create placeholder: {e}")
-
 # ------------------- FILE SERVING -------------------
 @app.route('/car_images/<filename>')
 def uploaded_file(filename):
-    real_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if os.path.exists(real_path):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    default_path = os.path.join(app.config['UPLOAD_FOLDER'], 'default_car.png')
-    if not os.path.exists(default_path):
-        create_placeholder_image(default_path)
-    return send_from_directory(app.config['UPLOAD_FOLDER'], 'default_car.png')
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(path):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], 'default_car.png')
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/damage_images/<filename>')
 def damage_image(filename):
@@ -124,8 +97,8 @@ def query(sql, params=None, fetchone=False, fetchall=False, commit=False):
             for row in rows:
                 for i, col in enumerate(desc):
                     val = row[col[0]]
-                    if val is not None and col[1] in (FieldType.DATETIME, FieldType.TIMESTAMP):
-                        row[col[0]] = val
+                    if val is not None and col[1] in (108, 12, 7):  # DATE/DATETIME
+                        row[col[0]] = val.date() if hasattr(val, 'date') else str(val)[:10]
             result = rows[0] if fetchone else rows
 
         if commit:
@@ -177,7 +150,6 @@ def init_db():
             year INT NOT NULL,
             price_day DECIMAL(10,2) NOT NULL,
             seats INT NOT NULL,
-            license_plate VARCHAR(20),
             image VARCHAR(255) DEFAULT 'default_car.png',
             available BOOLEAN DEFAULT TRUE
         )''',
@@ -191,7 +163,6 @@ def init_db():
             discount DECIMAL(10,2) DEFAULT 0,
             promo_code VARCHAR(20),
             status ENUM('pending','confirmed','active','completed','cancelled') DEFAULT 'pending',
-            payment_proof VARCHAR(255),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (car_id) REFERENCES cars(id)
@@ -230,12 +201,10 @@ def init_db():
             ]
         )
         cur.executemany(
-            "INSERT INTO cars (brand,model,year,price_day,seats,license_plate,image) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+            "INSERT INTO cars (brand,model,year,price_day,seats,image) VALUES (%s,%s,%s,%s,%s,%s)",
             [
-                ('Toyota', 'Camry', 2023, 50.00, 5, '1A-12345', 'car1.png'),
-                ('Honda', 'Civic', 2022, 45.00, 5, '1B-67890', 'car2.png'),
-                ('Suzuki', 'Swift', 2021, 35.00, 4, '1C-54321', 'car3.png'),
-                ('Mazda', 'CX-5', 2023, 75.00, 5, '1D-98765', 'car4.png')
+                ('Toyota', 'Camry', 2023, 50.00, 5, 'car1.png'),
+                ('Honda', 'Civic', 2022, 45.00, 5, 'car2.png')
             ]
         )
         cur.execute(
@@ -245,11 +214,6 @@ def init_db():
     conn.commit()
     cur.close()
     conn.close()
-
-    # ENSURE DEFAULT IMAGE
-    default_img = os.path.join(UPLOAD_FOLDER, 'default_car.png')
-    if not os.path.exists(default_img):
-        create_placeholder_image(default_img)
 
 init_db()
 
@@ -263,8 +227,7 @@ def inject_helpers():
     return {
         'today': date.today(),
         'current_year': date.today().year,
-        'user_pic': url_for('profile_pic', filename=pic),
-        'total_pages': 20  # For sitemap
+        'user_pic': url_for('profile_pic', filename=pic)
     }
 
 # ------------------- ROUTES -------------------
@@ -327,15 +290,12 @@ def cars_list():
 def car_detail(cid):
     update_car_availability()
     car = query("SELECT * FROM cars WHERE id=%s AND available=TRUE", (cid,), fetchone=True)
-    if not car:
-        flash('Car not available or not found.', 'danger')
-        return redirect('/cars')
-    return render_template('car_detail.html', car=car)
+    return render_template('car_detail.html', car=car) if car else redirect('/cars')
 
 @app.route('/book/<int:cid>', methods=['GET', 'POST'])
 def book_car(cid):
     if session.get('role') != 'customer':
-        flash('Login as customer to book', 'warning')
+        flash('Login as customer', 'warning')
         return redirect('/login')
     
     update_car_availability()
@@ -359,18 +319,18 @@ def book_car(cid):
             return render_template('book.html', car=car, min_date=date.today().strftime('%Y-%m-%d'), promotions=promos)
 
         days = (end_date - start_date).days + 1
-        total = Decimal(car['price_day']) * days
+        total = car['price_day'] * days
 
         promo_code = request.form.get('promo_code', '').strip()
-        discount = Decimal('0.00')
+        discount = 0
         if promo_code:
             promo = query(
                 "SELECT * FROM promotions WHERE code=%s AND valid_from <= %s AND valid_to >= %s",
                 (promo_code, date.today(), date.today()), fetchone=True
             )
             if promo:
-                discount = total * Decimal(promo['discount_pct']) / Decimal(100)
-                total = total - discount
+                discount = total * (promo['discount_pct'] / 100)
+                total -= discount
 
         bid = query(
             "INSERT INTO bookings (user_id,car_id,start_date,end_date,total,discount,promo_code,status) VALUES (%s,%s,%s,%s,%s,%s,%s,'pending')",
@@ -390,7 +350,9 @@ def my_bookings():
         return redirect('/login')
     update_car_availability()
     bookings = query("""
-        SELECT b.*, c.brand, c.model, c.year, c.image
+        SELECT 
+            b.*, 
+            c.brand, c.model, c.year, c.image
         FROM bookings b 
         JOIN cars c ON b.car_id = c.id 
         WHERE b.user_id = %s 
@@ -408,19 +370,7 @@ def payment(booking_id):
     """, (booking_id, session['user_id']), fetchone=True)
     if not b:
         return redirect('/my_bookings')
-    return render_template('payment.html', booking=b, is_qr=False)
-
-@app.route('/qr_payment/<int:booking_id>')
-def qr_payment(booking_id):
-    b = query("""
-        SELECT b.*, c.brand, c.model 
-        FROM bookings b 
-        JOIN cars c ON b.car_id = c.id 
-        WHERE b.id = %s AND b.user_id = %s
-    """, (booking_id, session['user_id']), fetchone=True)
-    if not b:
-        return redirect('/my_bookings')
-    return render_template('payment.html', booking=b, is_qr=True)
+    return render_template('payment.html', booking=b)
 
 @app.route('/confirm_payment/<int:booking_id>')
 def confirm_payment(booking_id):
@@ -435,8 +385,10 @@ def invoice(booking_id):
         return redirect('/login')
 
     booking = query("""
-        SELECT b.*, c.brand, c.model, c.year, c.price_day, c.image,
-               u.name AS customer_name, u.email
+        SELECT 
+            b.*, 
+            c.brand, c.model, c.year, c.price_day, c.image,
+            u.name AS customer_name, u.email
         FROM bookings b
         JOIN cars c ON b.car_id = c.id
         JOIN users u ON b.user_id = u.id
@@ -450,7 +402,7 @@ def invoice(booking_id):
     start = booking['start_date']
     end = booking['end_date']
     booking['rental_days'] = (end - start).days + 1
-    booking['subtotal'] = Decimal(booking['price_day']) * booking['rental_days']
+    booking['subtotal'] = booking['price_day'] * booking['rental_days']
     booking['total_price'] = booking['subtotal'] - booking['discount']
 
     return render_template('invoice.html', booking=booking)
@@ -473,6 +425,7 @@ def subscribe_promo():
         flash('Please enter a valid email', 'danger')
     return redirect(url_for('promotions'))
 
+# ------------------- PROFILE -------------------
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -487,7 +440,9 @@ def profile():
     if request.method == 'POST':
         name = request.form['name'].strip()
         phone = request.form['phone'].strip()
-        password = request.form['password'].strip() if request.form['password'] else user['password']
+        
+        new_password = request.form.get('password', '').strip()
+        password = new_password if new_password else user['password']
         
         filename = user['profile_pic']
         if 'profile_pic' in request.files and request.files['profile_pic'].filename:
@@ -542,11 +497,14 @@ def admin_dashboard():
 @app.route('/admin/manage_cars', methods=['GET', 'POST'])
 def admin_manage_cars():
     if session.get('role') != 'admin':
+        flash('Admin access only', 'danger')
         return redirect('/')
+
     update_car_availability()
 
     if request.method == 'POST':
-        action = request.form['action']
+        action = request.form.get('action')
+        car_id = request.form.get('car_id')
 
         if action == 'add':
             filename = 'default_car.png'
@@ -556,18 +514,25 @@ def admin_manage_cars():
                     ext = file.filename.rsplit('.', 1)[1].lower()
                     filename = secure_filename(f"car_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
             query(
-                "INSERT INTO cars (brand,model,year,price_day,seats,license_plate,image) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                (request.form['brand'], request.form['model'], request.form['year'],
-                 request.form['price_day'], request.form['seats'], request.form.get('license_plate',''), filename), commit=True
+                "INSERT INTO cars (brand,model,year,price_day,seats,image) VALUES (%s,%s,%s,%s,%s,%s)",
+                (request.form['brand'],
+                 request.form['model'],
+                 request.form['year'],
+                 request.form['price_day'],
+                 request.form['seats'],
+                 filename), commit=True
             )
             flash('Car added successfully!', 'success')
 
-        elif action == 'edit':
-            car_id = request.form['car_id']
-            car = query("SELECT image FROM cars WHERE id=%s", (car_id,), fetchone=True)
-            filename = car['image']
+        elif action == 'edit' and car_id:
+            car = query("SELECT * FROM cars WHERE id=%s", (car_id,), fetchone=True)
+            if not car:
+                flash('Car not found', 'danger')
+                return redirect(url_for('admin_manage_cars'))
 
+            filename = car['image']
             if 'image' in request.files and request.files['image'].filename:
                 file = request.files['image']
                 if allowed_file(file.filename):
@@ -580,62 +545,78 @@ def admin_manage_cars():
                             os.remove(old_path)
 
             query("""
-                UPDATE cars SET brand=%s, model=%s, year=%s, price_day=%s, seats=%s, license_plate=%s, image=%s
+                UPDATE cars SET 
+                    brand=%s, model=%s, year=%s, price_day=%s, seats=%s, image=%s
                 WHERE id=%s
             """, (
-                request.form['brand'], request.form['model'], request.form['year'],
-                request.form['price_day'], request.form['seats'], request.form.get('license_plate',''), filename, car_id
+                request.form['brand'],
+                request.form['model'],
+                request.form['year'],
+                request.form['price_day'],
+                request.form['seats'],
+                filename,
+                car_id
             ), commit=True)
             flash('Car updated successfully!', 'success')
 
-        elif action == 'delete':
-            car_id = request.form['car_id']
+        elif action == 'delete' and car_id:
             car = query("SELECT image FROM cars WHERE id=%s", (car_id,), fetchone=True)
             if car and car['image'] != 'default_car.png':
                 img_path = os.path.join(app.config['UPLOAD_FOLDER'], car['image'])
                 if os.path.exists(img_path):
                     os.remove(img_path)
             query("DELETE FROM cars WHERE id=%s", (car_id,), commit=True)
-            flash('Car deleted permanently.', 'success')
+            flash('Car deleted permanently', 'success')
 
         return redirect(url_for('admin_manage_cars'))
 
     cars = query("SELECT * FROM cars ORDER BY id DESC", fetchall=True) or []
     return render_template('admin/manage_cars.html', cars=cars)
 
+# ------------------- ADMIN – PROMOTIONS -------------------
 @app.route('/admin/manage_promotions', methods=['GET', 'POST'])
 def admin_manage_promotions():
     if session.get('role') != 'admin':
+        flash('Admin access only', 'danger')
         return redirect('/')
-    
+
     if request.method == 'POST':
         action = request.form.get('action')
+        promo_id = request.form.get('promo_id')
 
         if action == 'add':
             code = request.form['code'].strip().upper()
-            discount = int(request.form['discount_pct'])
-            valid_from = request.form['valid_from']
-            valid_to = request.form['valid_to']
-
             if query("SELECT id FROM promotions WHERE code=%s", (code,), fetchone=True):
-                flash(f'Promo code {code} already exists!', 'danger')
+                flash('Promo code already exists', 'danger')
             else:
                 query(
-                    "INSERT INTO promotions (code, discount_pct, valid_from, valid_to) VALUES (%s, %s, %s, %s)",
-                    (code, discount, valid_from, valid_to), commit=True
-                )
-                flash(f'Promo {code} added!', 'success')
+                    "INSERT INTO promotions (code,discount_pct,valid_from,valid_to) VALUES (%s,%s,%s,%s)",
+                    (code,
+                     request.form['discount_pct'],
+                     request.form['valid_from'],
+                     request.form['valid_to']), commit=True)
+                flash('Promotion added', 'success')
 
-        elif action == 'delete':
-            promo_id = request.form['promo_id']
+        elif action == 'edit' and promo_id:
+            query(
+                "UPDATE promotions SET code=%s, discount_pct=%s, valid_from=%s, valid_to=%s WHERE id=%s",
+                (request.form['code'].strip().upper(),
+                 request.form['discount_pct'],
+                 request.form['valid_from'],
+                 request.form['valid_to'],
+                 promo_id), commit=True)
+            flash('Promotion updated', 'success')
+
+        elif action == 'delete' and promo_id:
             query("DELETE FROM promotions WHERE id=%s", (promo_id,), commit=True)
-            flash('Promo deleted.', 'success')
+            flash('Promotion deleted', 'success')
 
         return redirect(url_for('admin_manage_promotions'))
 
-    promos = query("SELECT * FROM promotions ORDER BY valid_from DESC", fetchall=True) or []
-    return render_template('admin/manage_promotions.html', promos=promos)
+    promos = query("SELECT * FROM promotions ORDER BY id DESC", fetchall=True) or []
+    return render_template('admin/manage_promotions.html', promotions=promos)
 
+# ------------------- ADMIN – USERS -------------------
 @app.route('/admin/manage_users', methods=['GET', 'POST'])
 def admin_manage_users():
     if session.get('role') != 'admin':
@@ -646,26 +627,17 @@ def admin_manage_users():
         action = request.form.get('action')
         user_id = request.form.get('user_id')
 
-        if not user_id:
-            flash('Invalid request', 'danger')
-            return redirect(url_for('admin_manage_users'))
-
-        if action == 'role':
-            new_role = request.form.get('new_role')
+        if action == 'role' and user_id:
+            new_role = request.form['new_role']
             if new_role in ('customer', 'staff'):
-                current = query("SELECT role FROM users WHERE id=%s", (user_id,), fetchone=True)
-                if current and current['role'] == 'admin':
-                    flash('Cannot change role of an admin', 'danger')
-                else:
-                    query("UPDATE users SET role=%s WHERE id=%s", (new_role, user_id), commit=True)
-                    flash('User role updated', 'success')
+                query("UPDATE users SET role=%s WHERE id=%s", (new_role, user_id), commit=True)
+                flash('User role updated', 'success')
             else:
                 flash('Invalid role', 'danger')
 
-        elif action == 'delete':
-            target = query("SELECT role FROM users WHERE id=%s", (user_id,), fetchone=True)
-            if target and target['role'] == 'admin':
-                flash('Cannot delete an admin', 'danger')
+        elif action == 'delete' and user_id:
+            if int(user_id) == session['user_id']:
+                flash('You cannot delete yourself', 'danger')
             else:
                 user = query("SELECT profile_pic FROM users WHERE id=%s", (user_id,), fetchone=True)
                 if user and user['profile_pic'] != 'default.png':
@@ -680,44 +652,18 @@ def admin_manage_users():
     users = query("SELECT * FROM users ORDER BY id DESC", fetchall=True) or []
     return render_template('admin/manage_users.html', users=users)
 
-@app.route('/admin/manage_bookings', methods=['GET', 'POST'])
+# ------------------- ADMIN – BOOKINGS -------------------
+@app.route('/admin/manage_bookings')
 def admin_manage_bookings():
     if session.get('role') != 'admin':
         flash('Admin access only', 'danger')
         return redirect('/')
 
-    if request.method == 'POST':
-        booking_id = request.form.get('booking_id')
-        action = request.form.get('action')
-
-        if not booking_id or action not in ('confirm', 'cancel', 'complete'):
-            flash('Invalid action', 'danger')
-            return redirect(url_for('admin_manage_bookings'))
-
-        booking = query("SELECT status, car_id FROM bookings WHERE id=%s", (booking_id,), fetchone=True)
-        if not booking:
-            flash('Booking not found', 'danger')
-            return redirect(url_for('admin_manage_bookings'))
-
-        if action == 'confirm' and booking['status'] == 'pending':
-            query("UPDATE bookings SET status='confirmed' WHERE id=%s", (booking_id,), commit=True)
-            flash(f'Booking #{booking_id} confirmed', 'success')
-
-        elif action == 'cancel' and booking['status'] in ('pending', 'confirmed'):
-            query("UPDATE bookings SET status='cancelled' WHERE id=%s", (booking_id,), commit=True)
-            query("UPDATE cars SET available=TRUE WHERE id=%s", (booking['car_id'],), commit=True)
-            flash(f'Booking #{booking_id} cancelled', 'warning')
-
-        elif action == 'complete' and booking['status'] == 'active':
-            query("UPDATE bookings SET status='completed' WHERE id=%s", (booking_id,), commit=True)
-            query("UPDATE cars SET available=TRUE WHERE id=%s", (booking['car_id'],), commit=True)
-            flash(f'Booking #{booking_id} completed', 'success')
-
-        return redirect(url_for('admin_manage_bookings'))
-
     bookings = query("""
-        SELECT b.id, b.start_date, b.end_date, b.total, b.status,
-               u.name AS customer_name, c.brand, c.model
+        SELECT 
+            b.*, 
+            u.name, 
+            c.brand, c.model
         FROM bookings b
         JOIN users u ON b.user_id = u.id
         JOIN cars c ON b.car_id = c.id
@@ -726,34 +672,40 @@ def admin_manage_bookings():
 
     return render_template('admin/manage_bookings.html', bookings=bookings)
 
-@app.route('/damage_reports', methods=['GET', 'POST'])
+# ------------------- ADMIN – DAMAGE REPORTS -------------------
+@app.route('/admin/damage_reports')
 def damage_reports():
     if session.get('role') != 'admin':
         flash('Admin access only', 'danger')
         return redirect('/')
-
-    if request.method == 'POST':
-        report_id = request.form.get('report_id')
-        action = request.form.get('action')
-        if report_id and action in ('approve', 'reject'):
-            new_status = 'approved' if action == 'approve' else 'rejected'
-            query(
-                "UPDATE damage_reports SET status=%s WHERE id=%s",
-                (new_status, report_id), commit=True
-            )
-            flash(f'Report #{report_id} {new_status}.', 'success')
-        return redirect(url_for('damage_reports'))
-
+    
     reports = query("""
-        SELECT dr.*, c.brand, c.model, c.license_plate,
-               u.name AS reporter_name, u.role AS reporter_role
+        SELECT dr.*, c.brand, c.model, u.name AS staff_name
         FROM damage_reports dr
         JOIN cars c ON dr.car_id = c.id
         JOIN users u ON dr.staff_id = u.id
         ORDER BY dr.reported_at DESC
     """, fetchall=True) or []
+    
+    return render_template('admin/damage_reports.html', reports=reports)
 
-    return render_template('admin/damage_report.html', reports=reports)
+@app.route('/admin/review_damage/<int:report_id>/<action>', methods=['POST'])
+def review_damage(report_id, action):
+    if session.get('role') != 'admin':
+        flash('Admin access only', 'danger')
+        return redirect('/')
+    
+    if action not in ['approve', 'reject']:
+        flash('Invalid action', 'danger')
+        return redirect('/admin/damage_reports')
+    
+    new_status = 'approved' if action == 'approve' else 'rejected'
+    query(
+        "UPDATE damage_reports SET status=%s WHERE id=%s",
+        (new_status, report_id), commit=True
+    )
+    flash(f'Damage report #{report_id} {new_status}!', 'success')
+    return redirect('/admin/damage_reports')
 
 # ------------------- STAFF -------------------
 @app.route('/staff_dashboard')
@@ -893,6 +845,28 @@ def check_out(booking_id):
     flash(f'Checked out: #{booking_id}', 'success')
     return redirect('/rental_history')
 
+# ------------------- SITEMAP (FIXED!) -------------------
+@app.route('/sitemap')
+def sitemap():
+    total_pages = 8
+    if session.get('user_id'):
+        total_pages += 2
+        if session['role'] == 'customer':
+            total_pages += 1
+        elif session['role'] == 'staff':
+            total_pages += 3
+        elif session['role'] == 'admin':
+            total_pages += 6
+
+    first_car = query("SELECT id FROM cars LIMIT 1", fetchone=True)
+    first_car_id = first_car['id'] if first_car else None
+
+    return render_template(
+        'sitemap.html',
+        total_pages=total_pages,
+        first_car_id=first_car_id
+    )
+
 # ------------------- STATIC PAGES -------------------
 @app.route('/privacy_policy')
 def privacy_policy():
@@ -902,10 +876,5 @@ def privacy_policy():
 def terms():
     return render_template('terms.html')
 
-@app.route('/sitemap')
-def sitemap():
-    return render_template('sitemap.html')
-
-# ------------------- RUN -------------------
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

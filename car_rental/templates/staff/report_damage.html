@@ -1,123 +1,69 @@
 {% extends "base.html" %}
 {% block title %}Report Damage - {{ car.brand }} {{ car.model }}{% endblock %}
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/damage-royal.css') }}">
-{% endblock %}
-
 {% block content %}
-
-<!-- ROYAL RED HERO -->
-<section class="damage-hero">
-    <div class="hero-bg"></div>
-    <div class="hero-overlay"></div>
-    
-    <div class="container h-100 position-relative">
-        <div class="hero-content">
-            <div class="alert-icon">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-            </div>
-            <h1>Report Vehicle Damage</h1>
-            <p class="car-name">{{ car.brand }} <strong>{{ car.model }}</strong> • ID #{{ car.id }}</p>
-        </div>
+<section class="hero-fullscreen" style="background: linear-gradient(135deg, #dc2626, #f87171); height: 45vh;">
+    <div class="hero-overlay" style="background: rgba(30,27,75,.9);"></div>
+    <div class="hero-content text-center">
+        <h1 class="display-3 fw-bold text-white">Report Damage</h1>
+        <p class="lead text-white">{{ car.brand }} {{ car.model }}</p>
     </div>
 </section>
 
 <main class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-10 col-xl-8">
-
-            <!-- Flash Messages -->
+        <div class="col-lg-9">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, msg in messages %}
-                    <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-modern">
-                        <i class="bi bi-{{ 'check-circle' if category=='success' else 'x-circle' }}-fill"></i>
-                        {{ msg }}
-                    </div>
+                        <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show rounded-3 shadow-sm">
+                            {{ msg }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
 
-            <!-- Glass Damage Report Card -->
-            <div class="damage-card">
-                <div class="card-header">
-                    <h2>Damage Report Form</h2>
-                    <p>Please provide accurate details • Reported by: <strong>{{ session.user_name }}</strong></p>
+            <div class="card border-0 shadow-lg" style="border-radius: 25px;">
+                <div class="card-body p-5">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Car</label>
+                                <input type="text" class="form-control form-control-lg bg-light" 
+                                       value="{{ car.brand }} {{ car.model }} (ID: {{ car.id }})" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Reported By</label>
+                                <input type="text" class="form-control form-control-lg bg-light" 
+                                       value="{{ session.user_name }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label fw-bold">Description <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control form-control-lg" rows="6" 
+                                      placeholder="Describe the damage in detail (location, severity, cause if known)..." required></textarea>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label fw-bold">Upload Photo (Optional)</label>
+                            <input type="file" name="image" class="form-control form-control-lg" accept="image/*">
+                            <small class="text-muted">Max 2MB • PNG, JPG, JPEG</small>
+                        </div>
+
+                        <div class="mt-5 d-flex gap-3">
+                            <button type="submit" class="btn btn-danger btn-lg px-5">
+                                Submit Report
+                            </button>
+                            <a href="{{ url_for('staff_dashboard') }}" class="btn btn-outline-secondary btn-lg px-5">
+                                Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
                 </div>
-
-                <form method="POST" enctype="multipart/form-data" class="damage-form">
-                    <!-- Car Info -->
-                    <div class="info-grid">
-                        <div class="info-box">
-                            <label>Vehicle</label>
-                            <div class="info-value">
-                                <i class="bi bi-car-front"></i>
-                                {{ car.brand }} {{ car.model }}
-                                <span class="id-tag">ID #{{ car.id }}</span>
-                            </div>
-                        </div>
-                        <div class="info-box">
-                            <label>Reported By</label>
-                            <div class="info-value">
-                                <i class="bi bi-person-badge"></i>
-                                {{ session.user_name }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Description -->
-                    <div class="form-group">
-                        <label>Description of Damage <span class="req">*</span></label>
-                        <textarea name="description" rows="7" placeholder="Describe location, severity, and any known cause..." required></textarea>
-                    </div>
-
-                    <!-- Photo Upload -->
-                    <div class="form-group">
-                        <label>Upload Photo Evidence <span class="optional">(Optional)</span></label>
-                        <div class="upload-area" id="uploadArea">
-                            <input type="file" name="image" id="fileInput" accept="image/*">
-                            <div class="upload-placeholder">
-                                <i class="bi bi-cloud-upload"></i>
-                                <p>Click to upload or drag & drop</p>
-                                <small>PNG, JPG up to 2MB</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="action-buttons">
-                        <button type="submit" class="btn-submit">
-                            <i class="bi bi-send-fill"></i>
-                            Submit Report
-                        </button>
-                        <a href="{{ url_for('staff_dashboard') }}" class="btn-back">
-                            <i class="bi bi-arrow-left"></i>
-                            Back to Dashboard
-                        </a>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
 </main>
-
-<!-- Tiny JS for upload preview -->
-<script>
-document.getElementById('fileInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.querySelector('.upload-area').innerHTML = `
-                <img src="${e.target.result}" alt="Preview" style="max-width:100%; border-radius:16px;">
-                <div style="margin-top:1rem; color:#10b981; font-weight:600;">
-                    ${file.name} • ${(file.size/1024/1024).toFixed(2)} MB
-                </div>
-            `;
-        }
-        reader.readAsDataURL(file);
-    }
-});
-</script>
 {% endblock %}
