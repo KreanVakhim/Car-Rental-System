@@ -1,0 +1,5 @@
+Flask==2.3.3
+mysql-connector-python==8.2.0
+# Werkzeug 2.x may be incompatible with Flask 2.3.x (which expects Werkzeug 3.x).
+# Use a 3.x Werkzeug to match Flask 2.3, or remove this pin to let pip resolve a compatible version.
+Werkzeug>=3.0.0
