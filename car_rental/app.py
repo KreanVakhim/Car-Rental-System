@@ -1,3 +1,6 @@
+# --------------------------------------------------------------
+# app.py – Car Rental System (FINAL: Image Per Upload + All Fixes)
+# --------------------------------------------------------------
 from flask import (
     Flask, render_template, request, redirect, url_for,
     session, flash, send_from_directory
@@ -7,6 +10,7 @@ import os
 import mysql.connector
 from mysql.connector import Error
 from werkzeug.utils import secure_filename
+from decimal import Decimal
 
 app = Flask(__name__)
 app.secret_key = 'car_rental_kh_2025_secret'
@@ -44,6 +48,23 @@ ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXT
+
+# ------------------- UNIVERSAL IMAGE SAVER -------------------
+def save_uploaded_image(file, folder, prefix='img'):
+    """
+    Save uploaded file with unique name.
+    Returns: filename (str) or None
+    """
+    if not file or not file.filename:
+        return None
+    if not allowed_file(file.filename):
+        return None
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-4]  # microsec
+    filename = secure_filename(f"{prefix}_{timestamp}.{ext}")
+    filepath = os.path.join(folder, filename)
+    file.save(filepath)
+    return filename
 
 # ------------------- FILE SERVING -------------------
 @app.route('/car_images/<filename>')
@@ -319,22 +340,23 @@ def book_car(cid):
             return render_template('book.html', car=car, min_date=date.today().strftime('%Y-%m-%d'), promotions=promos)
 
         days = (end_date - start_date).days + 1
-        total = car['price_day'] * days
+        total = Decimal(str(car['price_day'])) * days
 
         promo_code = request.form.get('promo_code', '').strip()
-        discount = 0
+        discount = Decimal('0')
         if promo_code:
             promo = query(
                 "SELECT * FROM promotions WHERE code=%s AND valid_from <= %s AND valid_to >= %s",
                 (promo_code, date.today(), date.today()), fetchone=True
             )
             if promo:
-                discount = total * (promo['discount_pct'] / 100)
-                total -= discount
+                discount_pct = Decimal(str(promo['discount_pct'])) / Decimal('100')
+                discount = total * discount_pct
+                total = total - discount
 
         bid = query(
             "INSERT INTO bookings (user_id,car_id,start_date,end_date,total,discount,promo_code,status) VALUES (%s,%s,%s,%s,%s,%s,%s,'pending')",
-            (session['user_id'], cid, s, e, total, discount, promo_code if discount > 0 else None), commit=True
+            (session['user_id'], cid, s, e, float(total), float(discount), promo_code if discount > 0 else None), commit=True
         )
         
         query("UPDATE cars SET available=FALSE WHERE id=%s", (cid,), commit=True)
@@ -378,6 +400,40 @@ def confirm_payment(booking_id):
     flash('Payment confirmed!', 'success')
     return redirect('/my_bookings')
 
+# -------------------------------------------------
+# QR PAYMENT PAGE
+# -------------------------------------------------
+@app.route('/qr_payment/<int:booking_id>')
+def qr_payment(booking_id):
+    if 'user_id' not in session:
+        flash('Please login first', 'warning')
+        return redirect('/login')
+
+    booking = query("""
+        SELECT b.*, c.brand, c.model, c.price_day
+        FROM bookings b
+        JOIN cars c ON b.car_id = c.id
+        WHERE b.id = %s AND b.user_id = %s
+    """, (booking_id, session['user_id']), fetchone=True)
+
+    if not booking:
+        flash('Booking not found', 'danger')
+        return redirect('/my_bookings')
+
+    start = booking['start_date']
+    end   = booking['end_date']
+    days  = (end - start).days + 1
+    subtotal = Decimal(str(booking['price_day'])) * days
+    total    = subtotal - Decimal(str(booking.get('discount', 0)))
+
+    return render_template(
+        'qr_payment.html',
+        booking=booking,
+        days=days,
+        subtotal=float(subtotal),
+        total=float(total)
+    )
+
 @app.route('/invoice/<int:booking_id>')
 def invoice(booking_id):
     if 'user_id' not in session:
@@ -403,7 +459,7 @@ def invoice(booking_id):
     end = booking['end_date']
     booking['rental_days'] = (end - start).days + 1
     booking['subtotal'] = booking['price_day'] * booking['rental_days']
-    booking['total_price'] = booking['subtotal'] - booking['discount']
+    booking['total_price'] = booking['subtotal'] - booking.get('discount', 0)
 
     return render_template('invoice.html', booking=booking)
 
@@ -425,7 +481,7 @@ def subscribe_promo():
         flash('Please enter a valid email', 'danger')
     return redirect(url_for('promotions'))
 
-# ------------------- PROFILE -------------------
+# ------------------- PROFILE (Image Per Upload) -------------------
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -440,22 +496,22 @@ def profile():
     if request.method == 'POST':
         name = request.form['name'].strip()
         phone = request.form['phone'].strip()
-        
         new_password = request.form.get('password', '').strip()
-        password = new_password if new_password else user['password']
-        
-        filename = user['profile_pic']
-        if 'profile_pic' in request.files and request.files['profile_pic'].filename:
+        password = new_password if new_password else user.get('password', '')
+
+        old_pic = user.get('profile_pic', 'default.png')
+        filename = old_pic
+
+        if 'profile_pic' in request.files:
             file = request.files['profile_pic']
-            if allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                filename = secure_filename(f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
-                file.save(os.path.join(app.config['PROFILE_FOLDER'], filename))
-                if user['profile_pic'] != 'default.png' and user['profile_pic'] != filename:
-                    old_path = os.path.join(app.config['PROFILE_FOLDER'], user['profile_pic'])
+            new_filename = save_uploaded_image(file, app.config['PROFILE_FOLDER'], prefix=f"user_{session['user_id']}")
+            if new_filename:
+                filename = new_filename
+                if old_pic and old_pic != 'default.png':
+                    old_path = os.path.join(app.config['PROFILE_FOLDER'], old_pic)
                     if os.path.exists(old_path):
                         os.remove(old_path)
-        
+
         query(
             "UPDATE users SET name=%s, phone=%s, password=%s, profile_pic=%s WHERE id=%s",
             (name, phone, password, filename, session['user_id']), commit=True
@@ -508,12 +564,11 @@ def admin_manage_cars():
 
         if action == 'add':
             filename = 'default_car.png'
-            if 'image' in request.files and request.files['image'].filename:
+            if 'image' in request.files:
                 file = request.files['image']
-                if allowed_file(file.filename):
-                    ext = file.filename.rsplit('.', 1)[1].lower()
-                    filename = secure_filename(f"car_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                new_filename = save_uploaded_image(file, app.config['UPLOAD_FOLDER'], prefix="car")
+                if new_filename:
+                    filename = new_filename
 
             query(
                 "INSERT INTO cars (brand,model,year,price_day,seats,image) VALUES (%s,%s,%s,%s,%s,%s)",
@@ -532,15 +587,16 @@ def admin_manage_cars():
                 flash('Car not found', 'danger')
                 return redirect(url_for('admin_manage_cars'))
 
-            filename = car['image']
-            if 'image' in request.files and request.files['image'].filename:
+            old_img = car.get('image', 'default_car.png')
+            filename = old_img
+
+            if 'image' in request.files:
                 file = request.files['image']
-                if allowed_file(file.filename):
-                    ext = file.filename.rsplit('.', 1)[1].lower()
-                    filename = secure_filename(f"car_{car_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    if car['image'] != 'default_car.png':
-                        old_path = os.path.join(app.config['UPLOAD_FOLDER'], car['image'])
+                new_filename = save_uploaded_image(file, app.config['UPLOAD_FOLDER'], prefix=f"car_{car_id}")
+                if new_filename:
+                    filename = new_filename
+                    if old_img and old_img != 'default_car.png':
+                        old_path = os.path.join(app.config['UPLOAD_FOLDER'], old_img)
                         if os.path.exists(old_path):
                             os.remove(old_path)
 
@@ -561,7 +617,7 @@ def admin_manage_cars():
 
         elif action == 'delete' and car_id:
             car = query("SELECT image FROM cars WHERE id=%s", (car_id,), fetchone=True)
-            if car and car['image'] != 'default_car.png':
+            if car and car.get('image') != 'default_car.png':
                 img_path = os.path.join(app.config['UPLOAD_FOLDER'], car['image'])
                 if os.path.exists(img_path):
                     os.remove(img_path)
@@ -616,7 +672,7 @@ def admin_manage_promotions():
     promos = query("SELECT * FROM promotions ORDER BY id DESC", fetchall=True) or []
     return render_template('admin/manage_promotions.html', promotions=promos)
 
-# ------------------- ADMIN – USERS -------------------
+# ------------------- ADMIN – USERS (Image Per Upload) -------------------
 @app.route('/admin/manage_users', methods=['GET', 'POST'])
 def admin_manage_users():
     if session.get('role') != 'admin':
@@ -628,7 +684,7 @@ def admin_manage_users():
         user_id = request.form.get('user_id')
 
         if action == 'role' and user_id:
-            new_role = request.form['new_role']
+            new_role = request.form.get('new_role')
             if new_role in ('customer', 'staff'):
                 query("UPDATE users SET role=%s WHERE id=%s", (new_role, user_id), commit=True)
                 flash('User role updated', 'success')
@@ -640,12 +696,44 @@ def admin_manage_users():
                 flash('You cannot delete yourself', 'danger')
             else:
                 user = query("SELECT profile_pic FROM users WHERE id=%s", (user_id,), fetchone=True)
-                if user and user['profile_pic'] != 'default.png':
+                if user and user.get('profile_pic') != 'default.png':
                     pic_path = os.path.join(app.config['PROFILE_FOLDER'], user['profile_pic'])
                     if os.path.exists(pic_path):
                         os.remove(pic_path)
                 query("DELETE FROM users WHERE id=%s", (user_id,), commit=True)
                 flash('User deleted', 'success')
+
+        elif action == 'edit' and user_id:
+            user = query("SELECT * FROM users WHERE id=%s", (user_id,), fetchone=True)
+            if not user:
+                flash('User not found for editing', 'danger')
+                return redirect(url_for('admin_manage_users'))
+
+            name   = request.form['name'].strip()
+            email  = request.form['email'].strip()
+            phone  = request.form['phone'].strip()
+            password = request.form.get('password', '').strip() or user.get('password', '')
+
+            old_pic = user.get('profile_pic', 'default.png')
+            filename = old_pic
+
+            if 'profile_pic' in request.files:
+                file = request.files['profile_pic']
+                new_filename = save_uploaded_image(file, app.config['PROFILE_FOLDER'], prefix=f"user_{user_id}")
+                if new_filename:
+                    filename = new_filename
+                    if old_pic and old_pic != 'default.png':
+                        old_path = os.path.join(app.config['PROFILE_FOLDER'], old_pic)
+                        if os.path.exists(old_path):
+                            os.remove(old_path)
+
+            query("""
+                UPDATE users
+                SET name=%s, email=%s, phone=%s, password=%s, profile_pic=%s
+                WHERE id=%s
+            """, (name, email, phone, password, filename, user_id), commit=True)
+
+            flash('User updated successfully', 'success')
 
         return redirect(url_for('admin_manage_users'))
 
@@ -752,12 +840,9 @@ def report_damage(car_id):
     if request.method == 'POST':
         desc = request.form['description']
         filename = None
-        if 'image' in request.files and request.files['image'].filename:
+        if 'image' in request.files:
             file = request.files['image']
-            if allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                filename = secure_filename(f"damage_{car_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
-                file.save(os.path.join(app.config['DAMAGE_FOLDER'], filename))
+            filename = save_uploaded_image(file, app.config['DAMAGE_FOLDER'], prefix=f"damage_{car_id}")
         query(
             "INSERT INTO damage_reports (car_id,staff_id,description,image,status) VALUES (%s,%s,%s,%s,'pending')",
             (car_id, session['user_id'], desc, filename), commit=True
@@ -845,7 +930,7 @@ def check_out(booking_id):
     flash(f'Checked out: #{booking_id}', 'success')
     return redirect('/rental_history')
 
-# ------------------- SITEMAP (FIXED!) -------------------
+# ------------------- SITEMAP -------------------
 @app.route('/sitemap')
 def sitemap():
     total_pages = 8
@@ -876,5 +961,8 @@ def privacy_policy():
 def terms():
     return render_template('terms.html')
 
+# -------------------------------------------------
+# RUN APP
+# -------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
