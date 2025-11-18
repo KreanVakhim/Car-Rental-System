@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Book {{ car.brand }} {{ car.model }}{% endblock %}
+{% block content %}
+<h2>Book {{ car.brand }} {{ car.model }}</h2>
+<form method="POST">
+    <div class="row">
+        <div class="col-md-6">
+            <label>Start Date</label>
+            <input type="date" name="start_date" class="form-control" min="{{ min_date }}" required>
+        </div>
+        <div class="col-md-6">
+            <label>End Date</label>
+            <input type="date" name="end_date" class="form-control" min="{{ min_date }}" required>
+        </div>
+    </div>
+    <div class="mt-3">
+        <label>Promo Code (optional)</label>
+        <input type="text" name="promo_code" class="form-control" placeholder="e.g. WELCOME20">
+        {% if promotions %}
+        <small class="text-muted">Available: 
+            {% for p in promotions %}
+                <span class="badge bg-info">{{ p.code }}</span>
+lavia            {% endfor %}
+        </small>
+        {% endif %}
+    </div>
+    <button type="submit" class="btn btn-success mt-3">Proceed to Payment</button>
+</form>
+{% endblock %}

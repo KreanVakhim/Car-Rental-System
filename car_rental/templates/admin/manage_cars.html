@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Manage Cars{% endblock %}
+
+{% block content %}
+<br><br><br>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Manage Cars</h2>
+        <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#addCarModal">
+            <i class="bi bi-plus-lg"></i> Add New Car
+        </button>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-primary text-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>Brand / Model</th>
+                        <th>Year</th>
+                        <th>Price/Day</th>
+                        <th>Seats</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if cars %}
+                        {% for car in cars %}
+                        <tr>
+                            <td><strong>#{{ car.id }}</strong></td>
+                            <td>
+                                <img src="{{ url_for('uploaded_file', filename=car.image) }}" 
+                                     width="70" class="rounded shadow-sm" alt="{{ car.brand }} {{ car.model }}">
+                            </td>
+                            <td><strong>{{ car.brand }} {{ car.model }}</strong></td>
+                            <td>{{ car.year }}</td>
+                            <td><strong>${{ "%.2f"|format(car.price_day) }}</strong></td>
+                            <td><span class="badge bg-info">{{ car.seats }} seats</span></td>
+                            <td>
+                                <span class="badge px-3 py-2 rounded-pill
+                                    {% if car.available %}bg-success{% else %}bg-secondary text-white{% endif %}">
+                                    {{ 'Available' if car.available else 'Booked' }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <!-- Edit Button -->
+                                    <button type="button" class="btn btn-warning btn-sm" 
+                                            data-bs-toggle="modal" data-bs-target="#editCarModal{{ car.id }}">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+
+                                    <!-- Delete Form -->
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="car_id" value="{{ car.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Delete {{ car.brand }} {{ car.model }}? This cannot be undone.')">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Edit Modal for this car -->
+                        <div class="modal fade" id="editCarModal{{ car.id }}">
+                            <div class="modal-dialog modal-lg">
+                                <form method="POST" enctype="multipart/form-data">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning text-dark">
+                                            <h5 class="modal-title">Edit Car #{{ car.id }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="action" value="edit">
+                                            <input type="hidden" name="car_id" value="{{ car.id }}">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Brand</label>
+                                                    <input type="text" name="brand" class="form-control" value="{{ car.brand }}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Model</label>
+                                                    <input type="text" name="model" class="form-control" value="{{ car.model }}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Year</label>
+                                                    <input type="number" name="year" class="form-control" value="{{ car.year }}" min="2000" max="2030" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Price / Day</label>
+                                                    <input type="number" step="0.01" name="price_day" class="form-control" value="{{ car.price_day }}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Seats</label>
+                                                    <input type="number" name="seats" class="form-control" value="{{ car.seats }}" min="2" max="8" required>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Change Image (optional)</label>
+                                                    <input type="file" name="image" class="form-control" accept="image/*">
+                                                    <small class="text-muted">Current: {{ car.image }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Update Car</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p class="mt-3">No cars in the system yet.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Car Modal -->
+<div class="modal fade" id="addCarModal">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Add New Car</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="add">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Brand</label>
+                            <input type="text" name="brand" class="form-control" placeholder="Toyota" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Model</label>
+                            <input type="text" name="model" class="form-control" placeholder="Camry" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Year</label>
+                            <input type="number" name="year" class="form-control" min="2000" max="2030" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Price / Day</label>
+                            <input type="number" step="0.01" name="price_day" class="form-control" placeholder="50.00" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Seats</label>
+                            <input type="number" name="seats" class="form-control" min="2" max="8" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Car Image</label>
+                            <input type="file" name="image" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Car</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

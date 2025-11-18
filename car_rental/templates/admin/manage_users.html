@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<br><br><br>
+<div class="container mt-5">
+    <h2>Manage Users</h2>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category=='error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <img src="{{ url_for('profile_pic', filename=user.profile_pic) }}"
+                             width="40" class="rounded-circle" alt="profile">
+                    </td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone }}</td>
+
+                    <!-- ---------- ROLE ---------- -->
+                    <td>
+                        {% if user.role == 'admin' %}
+                            <span class="badge bg-danger">Admin</span>
+                        {% else %}
+                            <form method="POST" class="d-inline">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="hidden" name="action" value="role">
+                                <select name="new_role" onchange="this.form.submit()"
+                                        class="form-select form-select-sm">
+                                    <option value="customer" {{ 'selected' if user.role == 'customer' }}>Customer</option>
+                                    <option value="staff"    {{ 'selected' if user.role == 'staff'    }}>Staff</option>
+                                </select>
+                            </form>
+                        {% endif %}
+                    </td>
+
+                    <!-- ---------- ACTIONS ---------- -->
+                    <td class="text-nowrap">
+                        {% if user.role != 'admin' %}
+                            <!-- Delete -->
+                            <form method="POST" class="d-inline">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="hidden" name="action" value="delete">
+                                <button type="submit"
+                                        class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Delete user {{ user.name }}?')">
+                                    Delete
+                                </button>
+                            </form>
+
+                            <!-- Edit (opens modal) -->
+                            <button type="button"
+                                    class="btn btn-primary btn-sm ms-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal{{ user.id }}">
+                                Edit
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- ==================== EDIT MODAL ==================== -->
+                <div class="modal fade" id="editModal{{ user.id }}" tabindex="-1"
+                     aria-labelledby="editModalLabel{{ user.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <form method="POST" enctype="multipart/form-data">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editModalLabel{{ user.id }}">
+                                        Edit User #{{ user.id }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <input type="hidden" name="action" value="edit">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Name</label>
+                                        <input type="text" name="name" class="form-control"
+                                               value="{{ user.name }}" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" name="email" class="form-control"
+                                               value="{{ user.email }}" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="text" name="phone" class="form-control"
+                                               value="{{ user.phone }}" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">New Password <small class="text-muted">(leave blank to keep current)</small></label>
+                                        <input type="password" name="password" class="form-control"
+                                               placeholder="••••••••">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Profile picture</label>
+                                        <input type="file" name="profile_pic" class="form-control"
+                                               accept=".png,.jpg,.jpeg,.gif">
+                                        <div class="form-text">
+                                            Current:
+                                            <img src="{{ url_for('profile_pic', filename=user.profile_pic) }}"
+                                                 width="60" class="mt-1 rounded-circle">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        Save changes
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
