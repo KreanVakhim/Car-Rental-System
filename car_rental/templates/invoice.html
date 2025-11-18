@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Invoice #{{ "%05d"|format(booking.id) }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card border-0 shadow-lg rounded-4">
+        <div class="card-body p-5">
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-accent">INVOICE</h1>
+                <p class="text-muted fs-5">Booking ID: #{{ "%05d"|format(booking.id) }}</p>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <h6 class="text-muted text-uppercase small">Bill To:</h6>
+                    <p class="mb-1"><strong>{{ booking.customer_name }}</strong></p>
+                    <p class="text-muted">{{ booking.email }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h6 class="text-muted text-uppercase small">Invoice Date:</h6>
+                    <p>{{ booking.created_at|date('%B %d, %Y') }}</p>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="bg-light p-4 rounded-3 mb-4">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="fw-bold">{{ booking.brand }} {{ booking.model }} ({{ booking.year }})</h5>
+                        <p class="mb-0">
+                            <strong>Pickup:</strong> {{ booking.start_date|date }}<br>
+                            <strong>Return:</strong> {{ booking.end_date|date }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span class="badge bg-primary fs-6">{{ booking.rental_days }} days</span>
+                    </div>
+                </div>
+            </div>
+
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Description</th>
+                        <th class="text-center">Days</th>
+                        <th class="text-end">Rate</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Rental Fee</td>
+                        <td class="text-center">{{ booking.rental_days }}</td>
+                        <td class="text-end">${{ "%.2f"|format(booking.price_day) }}</td>
+                        <td class="text-end">${{ "%.2f"|format(booking.subtotal) }}</td>
+                    </tr>
+                    {% if booking.discount > 0 %}
+                    <tr class="table-success">
+                        <td colspan="3" class="text-end fw-bold">Discount</td>
+                        <td class="text-end text-success fw-bold">-$ {{ "%.2f"|format(booking.discount) }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end">Total Amount:</th>
+                        <th class="text-end text-accent fs-5">${{ "%.2f"|format(booking.total_price) }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="text-center mt-5 no-print">
+                <button onclick="window.print()" class="btn btn-gold rounded-pill px-5">
+                    Print Invoice
+                </button>
+                <a href="{{ url_for('my_bookings') }}" class="btn btn-outline-primary rounded-pill px-4 ms-2">
+                    Back to Bookings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print { display: none; }
+    body { background: white; }
+    .card { box-shadow: none; border: 1px solid #ddd; }
+}
+</style>
+{% endblock %}

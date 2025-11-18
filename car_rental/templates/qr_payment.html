@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}QR Payment - Car Rental{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/qr-payment-imperial-glass.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="qr-container">
+    <h1 class="qr-title">QR Code Payment</h1>
+
+    <div class="qr-card">
+        <h4>Scan to Pay</h4>
+        <div class="qr-image-wrapper">
+            <img src="{{ url_for('static', filename='img/qr-aba-pay.png') }}" 
+                 alt="QR CODE" class="qr-image">
+        </div>
+    </div>
+
+    <div class="info-card">
+        <p><strong>Amount:</strong> <span>${{ "%.2f"|format(total) }}</span></p>
+        <p><strong>Booking:</strong> <span>{{ booking.brand }} {{ booking.model }}</span></p>
+        <p><strong>Reference:</strong> <span>BK{{ booking.id }}</span></p>
+    </div>
+
+    <div class="tip-box">
+        <small>
+            How to pay:<br>
+            1. Open your banking app<br>
+            2. Scan the QR code<br>
+            3. Confirm payment of ${{ "%.2f"|format(total) }}<br>
+            4. Click "Payment Complete" below
+        </small>
+    </div>
+
+    <div class="btn-group">
+        <a href="{{ url_for('confirm_payment', booking_id=booking.id) }}" 
+           class="btn-primary-custom">
+            Payment Complete
+        </a>
+        <a href="{{ url_for('payment', booking_id=booking.id) }}" 
+           class="btn-secondary-custom">
+            Back to Payment
+        </a>
+    </div>
+</div>
+{% endblock %}

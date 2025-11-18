@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}My Bookings - Car Rental KH{% endblock %}
+
+{% block content %}
+<br><br><br>
+<section class="hero-section" style="background: linear-gradient(135deg, #6D28D9, #EC4899); padding: 4rem 0; color: white;">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold">My Bookings</h1>
+        <p class="lead">Manage your rentals with ease</p>
+    </div>
+</section>
+
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-11 col-xxl-10">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category=='success' else 'danger' if category=='danger' else 'warning' }} alert-dismissible fade show mb-4" role="alert">
+                        <i class="bi {{ 'check-circle-fill' if category=='success' else 'exclamation-triangle-fill' if category=='warning' else 'x-circle-fill' }}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if bookings %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Car</th>
+                            <th>Dates</th>
+                            <th>Days</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr>
+                            <td class="car-cell">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if b.image and b.image != 'default_car.png' %}
+                                        <img src="{{ url_for('uploaded_file', filename=b.image) }}" 
+                                             alt="{{ b.brand }} {{ b.model }}" 
+                                             class="car-thumb rounded">
+                                    {% else %}
+                                        <div class="car-placeholder bg-light rounded d-flex align-items-center justify-content-center">
+                                            <i class="bi bi-car-front fs-3 text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-bold">{{ b.brand }} {{ b.model }}</div>
+                                        <small class="text-muted">{{ b.year }}</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div><strong>From:</strong> {{ b.start_date|date }}</div>
+                                <div><strong>To:</strong> {{ b.end_date|date }}</div>
+                            </td>
+
+                            <td class="text-center fw-bold text-primary">
+                                {{ (b.end_date - b.start_date).days + 1 }}
+                            </td>
+
+                            <td class="fw-bold text-success fs-5">${{ "%.2f"|format(b.total) }}</td>
+
+                            <td>
+                                <span class="status-badge 
+                                    {% if b.status == 'confirmed' %}status-confirmed
+                                    {% elif b.status == 'pending' %}status-pending
+                                    {% elif b.status == 'cancelled' %}status-cancelled
+                                    {% elif b.status == 'active' %}status-active
+                                    {% elif b.status == 'completed' %}status-completed
+                                    {% else %}status-default{% endif %}">
+                                    {{ b.status|title }}
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+                                <div class="btn-group-vertical btn-group-sm" role="group">
+                                        {% if b.status == 'pending' %}
+                                        <a href="{{ url_for('payment', booking_id=b.id) }}" 
+                                           class="btn btn-pay btn-sm mb-1">Pay Now</a>
+                                        {% if (b.start_date - today).days > 1 %}
+                                            <a href="{{ url_for('cancel_confirm', booking_id=b.id) }}" 
+                                               class="btn btn-cancel-sm btn-sm">
+                                                Cancel
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted small">Locked</span>
+                                        {% endif %}
+                                    {% elif b.status in ['confirmed', 'active', 'completed'] %}
+                                        <a href="{{ url_for('invoice', booking_id=b.id) }}" 
+                                           class="btn btn-invoice btn-sm" target="_blank">
+                                            Invoice
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x display-1 text-muted opacity-75"></i>
+                <h3 class="mt-4 text-muted">No bookings yet</h3>
+                <p class="text-muted mb-4">Start your journey today!</p>
+                <a href="{{ url_for('cars_list') }}" class="btn btn-gold btn-lg px-5 rounded-pill">
+                    Browse Cars
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</main>
+{% endblock %}

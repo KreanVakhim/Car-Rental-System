@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Book {{ car.brand }} {{ car.model }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-6">
+            <img src="{{ url_for('uploaded_file', filename=car.image) }}" class="img-fluid rounded shadow" alt="{{ car.brand }}">
+        </div>
+        <div class="col-md-6">
+            <h2>Book <strong>{{ car.brand }} {{ car.model }}</strong></h2>
+            <p class="lead">Price: <strong>${{ car.price_day }}/day</strong></p>
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Start Date</label>
+                    <input type="date" name="start_date" class="form-control" min="{{ min_date }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>End Date</label>
+                    <input type="date" name="end_date" class="form-control" min="{{ min_date }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>Promo Code (Optional)</label>
+                    <input type="text" name="promo_code" class="form-control" placeholder="e.g. WELCOME20">
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">Proceed to Payment</button>
+            </form>
+
+            {% if promotions %}
+            <div class="mt-4">
+                <h5>Active Promotions</h5>
+                <ul class="list-group">
+                    {% for p in promotions %}
+                    <li class="list-group-item">
+                        <strong>{{ p.code }}</strong> → {{ p.discount_pct }}% OFF
+                        <small class="text-muted d-block">
+                            Valid: {{ p.valid_from|date('d/m') }} → {{ p.valid_to|date('d/m') }}
+                        </small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

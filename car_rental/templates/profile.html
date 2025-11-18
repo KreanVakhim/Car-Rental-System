@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile-imperial.css') }}?v=1">
+{% endblock %}
+
+{% block content %}
+<br><br><br>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+
+            <!-- PROFILE CARD -->
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar-wrapper">
+                        <img src="{{ url_for('profile_pic', filename=user.profile_pic or 'default.png') }}" 
+                             alt="Profile" class="profile-avatar" id="avatar">
+                        <label for="profile_pic" class="avatar-upload-btn">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                    </div>
+                    <h2 class="profile-name">{{ user.name }}</h2>
+                    <p class="profile-role">{{ user.role|title }} Account</p>
+                </div>
+
+                <div class="profile-body">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="file" name="profile_pic" id="profile_pic" class="d-none" accept="image/*" onchange="previewImage(event)">
+
+                        <div class="text-center mb-4">
+                            <img id="preview" src="{{ url_for('profile_pic', filename=user.profile_pic or 'default.png') }}" 
+                                 class="img-fluid rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
+                            <p class="text-muted small mt-2">Click to change photo • Max 2MB</p>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-purple">Full Name</label>
+                                <input type="text" name="name" class="form-control form-control-imperial" 
+                                       value="{{ user.name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-purple">Phone Number</label>
+                                <input type="text" name="phone" class="form-control form-control-imperial" 
+                                       value="{{ user.phone }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-purple">Email Address</label>
+                                <input type="email" class="form-control form-control-imperial" 
+                                       value="{{ user.email }}" disabled>
+                                <small class="text-muted">Email cannot be changed</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-purple">New Password <span class="text-muted">(optional)</span></label>
+                                <input type="password" name="password" class="form-control form-control-imperial" 
+                                       placeholder="Leave blank to keep current">
+                                <small class="text-muted">Only enter if you want to change</small>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold text-purple">Account Type</label>
+                                <input type="text" class="form-control form-control-imperial" 
+                                       value="{{ user.role|title }}" disabled>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-imperial btn-lg">
+                                <i class="fas fa-save me-2"></i> Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="profile-footer">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        Member since {{ user.created_at.strftime('%B %Y') }}
+                    </small>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('preview');
+    const avatar = document.getElementById('avatar');
+
+    if (file) {
+        // Validate size
+        if (file.size > 2 * 1024 * 1024) {
+            alert("Image must be less than 2MB");
+            event.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            avatar.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+</script>
+{% endblock %}
