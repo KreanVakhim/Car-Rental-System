@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}My Damage Reports - Car Rental KH{% endblock %}
+
+{% block content %}
+
+<!-- CLEAN IMPERIAL HERO -->
+<section class="reports-hero">
+    <div class="hero-overlay"></div>
+    <div class="container">
+        <div class="hero-content">
+            <div class="page-badge">
+                <i class="bi bi-file-earmark-text-fill"></i>
+                DAMAGE REPORTS
+            </div>
+            <h1>My Reports</h1>
+            <p class="lead">Guardian of the Royal Fleet • {{ reports|length }} total</p>
+        </div>
+    </div>
+</section>
+
+<main class="container py-5">
+    <div class="reports-grid">
+
+        {% if reports %}
+            {% for r in reports %}
+            <article class="report-card" data-status="{{ r.status }}">
+                <div class="report-header">
+                    <div class="report-id">#{{ "%04d"|format(r.id) }}</div>
+                    <div class="status-badge {{ r.status }}">
+                        {{ r.status|title }}
+                    </div>
+                </div>
+
+                <div class="report-car">
+                    <h3>{{ r.brand }} {{ r.model }}</h3>
+                    <p class="plate">{{ r.plate|default("KH-2025") }}</p>
+                </div>
+
+                <div class="report-body">
+                    <p class="description">
+                        {{ r.description|default("No description provided") }}
+                    </p>
+
+                    {% if r.image %}
+                    <div class="damage-image">
+                        <a href="{{ url_for('damage_image', filename=r.image) }}" target="_blank" class="image-link">
+                            <img src="{{ url_for('damage_image', filename=r.image) }}" 
+                                 alt="Damage photo" loading="lazy">
+                            <div class="zoom-icon">
+                                <i class="bi bi-zoom-in"></i>
+                            </div>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="no-image">
+                        <i class="bi bi-image"></i>
+                        <small>No photo</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="report-meta">
+                        <div class="meta-item">
+                            <i class="bi bi-calendar-event"></i>
+                            <span>{{ r.reported_at|date("d MMM yyyy") }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="bi bi-clock"></i>
+                            <span>{{ r.reported_at|date("H:mm") }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-footer">
+                    <a href="{{ url_for('staff_dashboard') }}" class="btn btn-outline-sm">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h3>Perfect Record!</h3>
+                <p>No damage reports submitted</p>
+                <small>The fleet remains pristine under your watch</small>
+                <a href="{{ url_for('staff_dashboard') }}" class="btn btn-gold mt-4">
+                    Return to Command Center
+                </a>
+            </div>
+        {% endif %}
+
+    </div>
+</main>
+{% endblock %}

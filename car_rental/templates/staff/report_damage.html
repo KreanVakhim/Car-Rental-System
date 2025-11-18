@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Report Damage - {{ car.brand }} {{ car.model }}{% endblock %}
+
+{% block content %}
+<section class="hero-fullscreen" style="background: linear-gradient(135deg, #dc2626, #f87171); height: 45vh;">
+    <div class="hero-overlay" style="background: rgba(30,27,75,.9);"></div>
+    <div class="hero-content text-center">
+        <h1 class="display-3 fw-bold text-white">Report Damage</h1>
+        <p class="lead text-white">{{ car.brand }} {{ car.model }}</p>
+    </div>
+</section>
+
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show rounded-3 shadow-sm">
+                            {{ msg }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card border-0 shadow-lg" style="border-radius: 25px;">
+                <div class="card-body p-5">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Car</label>
+                                <input type="text" class="form-control form-control-lg bg-light" 
+                                       value="{{ car.brand }} {{ car.model }} (ID: {{ car.id }})" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Reported By</label>
+                                <input type="text" class="form-control form-control-lg bg-light" 
+                                       value="{{ session.user_name }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label fw-bold">Description <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control form-control-lg" rows="6" 
+                                      placeholder="Describe the damage in detail (location, severity, cause if known)..." required></textarea>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label fw-bold">Upload Photo (Optional)</label>
+                            <input type="file" name="image" class="form-control form-control-lg" accept="image/*">
+                            <small class="text-muted">Max 2MB • PNG, JPG, JPEG</small>
+                        </div>
+
+                        <div class="mt-5 d-flex gap-3">
+                            <button type="submit" class="btn btn-danger btn-lg px-5">
+                                Submit Report
+                            </button>
+                            <a href="{{ url_for('staff_dashboard') }}" class="btn btn-outline-secondary btn-lg px-5">
+                                Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

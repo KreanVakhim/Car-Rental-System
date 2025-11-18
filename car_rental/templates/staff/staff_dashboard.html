@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Staff Dashboard - Car Rental KH{% endblock %}
+
+{% block content %}
+<br><br><br>
+<!-- CLEAN IMPERIAL HERO -->
+<section class="staff-hero-clean">
+    <div class="hero-overlay"></div>
+    <div class="container">
+        <div class="hero-content">
+            <div class="staff-tag">
+                <i class="bi bi-shield-fill"></i>
+                STAFF MODE
+            </div>
+            <h1>Command Center</h1>
+            <p class="lead">Welcome back, <strong>{{ session.user_name }}</strong></p>
+            <div class="live-time">
+                <span id="clock"></span> • {{ "now"|date("dddd, d MMMM yyyy") }}
+            </div>
+        </div>
+    </div>
+</section>
+
+<main class="container py-5">
+    <div class="dashboard-grid">
+
+        <!-- STATS ROW -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-icon blue">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ cars|length }}</h3>
+                    <p>Total Vehicles</p>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon amber">
+                    <i class="bi bi-tools"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ recent_reports|length }}</h3>
+                    <p>Pending Reports</p>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon green">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ cars_available|default(38) }}</h3>
+                    <p>Available Now</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+
+            <!-- LEFT: RECENT REPORTS -->
+            <div class="reports-panel">
+                <div class="panel-header">
+                    <h2>Recent Damage Reports</h2>
+                    <a href="{{ url_for('my_damage_reports') }}" class="link-small">View all →</a>
+                </div>
+                
+                {% if recent_reports %}
+                <div class="reports-list">
+                    {% for r in recent_reports %}
+                    <div class="report-item">
+                        <div class="car-info">
+                            <div class="car-name">{{ r.brand }} {{ r.model }}</div>
+                            <div class="car-plate">{{ r.plate|default("KH-2025") }}</div>
+                        </div>
+                        <div class="report-details">
+                            <div class="report-date">
+                                {{ r.reported_at|date("d MMM, H:i") }}
+                            </div>
+                            <span class="status-badge {{ r.status }}">
+                                {{ r.status|title }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-shield-check"></i>
+                    <p>No damage reports</p>
+                    <small>All vehicles in perfect condition</small>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- RIGHT: QUICK ACTIONS + DUTY -->
+            <div class="sidebar">
+                <!-- Quick Actions -->
+                <div class="action-card">
+                    <h3>Quick Actions</h3>
+                    <div class="action-buttons">
+                        <a href="{{ url_for('cars_list') }}" class="action-btn">
+                            <i class="bi bi-truck"></i>
+                            View Fleet
+                        </a>
+                        <a href="{{ url_for('my_damage_reports') }}" class="action-btn">
+                            <i class="bi bi-file-text"></i>
+                            My Reports
+                        </a>
+                        <button class="action-btn primary" data-bs-toggle="modal" data-bs-target="#reportModal">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Report Damage
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Duty Status -->
+                <div class="duty-card">
+                    <div class="duty-header">
+                        <div class="avatar">
+                            <img src="{{ url_for('static', filename='img/avatar-staff.jpg') }}" alt="Staff">
+                        </div>
+                        <div>
+                            <h4>{{ session.user_name }}</h4>
+                            <p>Fleet Guardian</p>
+                        </div>
+                    </div>
+                    <div class="duty-body">
+                        <div class="duty-row">
+                            <span>Shift</span>
+                            <strong>08:00 - 17:00</strong>
+                        </div>
+                        <div class="duty-row">
+                            <span>Status</span>
+                            <span class="status-live">ON DUTY</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- CLEAN MODAL -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content clean-modal">
+            <div class="modal-header">
+                <h3>Report Damage</h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="carSearch" placeholder="Search vehicle...">
+                </div>
+                <div class="car-grid">
+                    {% for car in cars %}
+                    <a href="{{ url_for('report_damage', car_id=car.id) }}" class="car-tile">
+                        <div class="car-img">
+                            {% if car.image %}
+                            <img src="{{ url_for('uploaded_file', filename=car.image) }}" alt="{{ car.brand }}">
+                            {% else %}
+                            <div class="placeholder">
+                                <i class="bi bi-car-front"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="car-details">
+                            <h4>{{ car.brand }} {{ car.model }}</h4>
+                            <p>{{ car.plate|default("KH-2025") }}</p>
+                            <span class="status {{ 'available' if car.available else 'rented' }}">
+                                {{ 'Available' if car.available else 'Rented' }}
+                            </span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Live clock
+function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Search
+document.getElementById('carSearch')?.addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase();
+    document.querySelectorAll('.car-tile').forEach(tile => {
+        const text = tile.textContent.toLowerCase();
+        tile.style.display = text.includes(query) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

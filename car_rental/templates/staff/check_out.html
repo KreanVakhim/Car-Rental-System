@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Check-Out Booking #{{ booking.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Check-Out: #{{ booking.id }}</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <h5>{{ booking.brand }} {{ booking.model }}</h5>
+            <p><strong>Customer:</strong> {{ booking.customer_name }}</p>
+
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Return Odometer (km)</label>
+                        <input type="number" name="return_odometer" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Fuel Level</label>
+                        <select name="fuel" class="form-control" required>
+                            <option value="Full">Full</option>
+                            <option value="3/4">3/4</option>
+                            <option value="1/2">1/2</option>
+                            <option value="1/4">1/4</option>
+                            <option value="Empty">Empty</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label>Any Damage?</label><br>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="damage" value="no" id="no" checked>
+                        <label class="form-check-label" for="no">No</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="damage" value="yes" id="yes">
+                        <label class="form-check-label" for="yes">Yes → Report</label>
+                    </div>
+                </div>
+
+                <div id="damageSection" style="display:none;">
+                    <textarea name="damage_desc" class="form-control" rows="3" placeholder="Describe damage..."></textarea>
+                    <input type="file" name="damage_photo" class="form-control mt-2" accept="image/*">
+                </div>
+
+                <hr>
+                <h5>Final Bill: ${{ booking.total }}</h5>
+                <button type="submit" class="btn btn-primary">Complete Check-Out</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('input[name="damage"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('damageSection').style.display = this.value === 'yes' ? 'block' : 'none';
+    });
+});
+</script>
+{% endblock %}
